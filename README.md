@@ -20,7 +20,7 @@ Aplikasi manajemen tiket wahana berbasis web yang dibangun menggunakan Python (F
 - **Backend**: Python 3, Flask
 - **Database**: SQLite (SQLAlchemy ORM)
 - **Frontend**: HTML5, Tailwind CSS, Jinja2 Templates
-- **Tools**: Gunicorn (Production), ReportLab (PDF Generation)
+- **Tools**: Gunicorn (Production), ReportLab (PDF), QRCode (Tiket), Pillow (Image Processing)
 
 ## 📦 Instalasi (Local Development)
 
@@ -48,7 +48,7 @@ Ikuti langkah berikut untuk menjalankan aplikasi di komputer lokal:
    ```bash
    python run.py
    ```
-   Aplikasi akan berjalan di `http://127.0.0.1:5002`
+   Aplikasi akan berjalan di `http://127.0.0.1:5004`
 
 ## 🌐 Deployment
 

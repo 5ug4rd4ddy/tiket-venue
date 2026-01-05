@@ -8,3 +8,8 @@ MarkupSafe==3.0.3
 SQLAlchemy==2.0.45
 typing_extensions==4.15.0
 Werkzeug==3.1.4
+qrcode==8.0
+Pillow==11.0.0
+requests==2.32.3
+reportlab==4.2.5
+gunicorn==23.0.0
