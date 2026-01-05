@@ -1,0 +1,422 @@
+{% extends "base.html" %}
+
+{% block title %}Pemesanan Tiket{% endblock %}
+
+{% block content %}
+<section class="w-[95%] max-w-3xl mx-auto">
+    
+    <!-- HERO IMAGE -->
+    {% if site.hero_image_url %}
+    <div class="rounded-2xl overflow-hidden mb-4 shadow-md relative group">
+        {% if site.hero_image_url.startswith('http') %}
+        <img src="{{ site.hero_image_url }}" alt="hero" class="w-full h-44 object-cover sm:h-64 transition-transform duration-700 group-hover:scale-105" />
+        {% else %}
+        <img src="{{ url_for('static', filename='uploads/' + site.hero_image_url) }}" alt="hero" class="w-full h-44 object-cover sm:h-64 transition-transform duration-700 group-hover:scale-105" />
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="rounded-2xl overflow-hidden mb-4 shadow-md relative group bg-gradient-to-r from-blue-500 to-indigo-600 h-44 sm:h-64 flex items-center justify-center">
+        <h1 class="text-3xl font-bold text-white tracking-wider">{{ site.park_name }}</h1>
+    </div>
+    {% endif %}
+
+    <!-- INFO CARD -->
+    <div class="framer-card mb-4 bg-white dark:bg-slate-900 border border-transparent rounded-2xl shadow-lg p-6">
+        <div class="flex gap-4 items-start">
+            {% if site.logo_url %}
+                {% if site.logo_url.startswith('http') %}
+                <img src="{{ site.logo_url }}" alt="logo" class="w-16 h-16 rounded-lg object-cover bg-white"/>
+                {% else %}
+                <img src="{{ url_for('static', filename='uploads/' + site.logo_url) }}" alt="logo" class="w-16 h-16 rounded-lg object-cover bg-white"/>
+                {% endif %}
+            {% else %}
+            <div class="w-16 h-16 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-2xl">W</div>
+            {% endif %}
+            <div>
+                <div class="text-xl font-semibold">{{ site.park_name }}</div>
+                <div class="text-sm text-slate-500 dark:text-slate-400">{{ site.park_info }}</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">{{ site.opening_hours }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1) Tipe kunjungan -->
+    <div class="framer-card mb-4 bg-white dark:bg-slate-900 border border-transparent rounded-2xl shadow-lg p-6">
+        <div class="text-lg font-medium mb-2">Tipe kunjungan</div>
+        <div class="flex gap-3">
+            <label id="personalLabel" class="visit-type flex-1 p-3 rounded-lg border cursor-pointer text-center selected transition-all duration-300">
+                <input id="visitPersonal" type="radio" name="visitType" value="personal" checked class="hidden" />
+                <div class="font-medium">Personal</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Satu pengunjung</div>
+            </label>
+            <label id="groupLabel" class="visit-type flex-1 p-3 rounded-lg border cursor-pointer text-center transition-all duration-300">
+                <input id="visitGroup" type="radio" name="visitType" value="group" class="hidden" />
+                <div class="font-medium">Group</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Minimal 10 pengunjung</div>
+            </label>
+        </div>
+
+        <!-- Group form (removed from here, moved to checkout) -->
+        <div id="groupForm" class="mt-4 hidden">
+            <div class="p-3 bg-blue-50 text-blue-700 rounded-lg text-sm">
+                Detail group akan diisi pada halaman selanjutnya.
+            </div>
+        </div>
+    </div>
+
+    <!-- 2) Tanggal kunjungan -->
+    <div class="framer-card mb-4 bg-white dark:bg-slate-900 border border-transparent rounded-2xl shadow-lg p-6">
+        <label class="text-lg font-medium block mb-2">Tanggal kunjungan</label>
+        <input id="datePicker" class="w-full p-3 rounded-lg border bg-transparent focus:outline-none focus:border-indigo-500" placeholder="Pilih tanggal" />
+    </div>
+
+    <!-- 3) Pilih tiket -->
+    <div class="framer-card mb-4 bg-white dark:bg-slate-900 border border-transparent rounded-2xl shadow-lg p-6">
+        <h3 class="text-lg font-medium mb-3">Pilih Tiket</h3>
+        {% for ticket in tickets %}
+        <div class="border rounded-lg p-4 mb-3 ticket-card" data-category="{{ ticket.category or 'personal' }}">
+            <div class="font-bold mb-2">{{ ticket.name }}</div>
+            <div class="text-xs text-slate-500 mb-3">{{ ticket.description }}</div>
+            
+            <!-- Dewasa -->
+            <div class="flex justify-between items-center mb-3 pb-3 border-b border-dashed border-slate-200 dark:border-slate-700">
+                <div class="text-sm">
+                    <div class="font-medium">Dewasa</div>
+                    <div id="price-{{ ticket.slug }}_adult" class="font-semibold text-indigo-600">Rp {{ "{:,}".format(ticket.price_adult) }}</div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button class="qty-circle w-8 h-8 rounded-full border-indigo-600 flex items-center justify-center text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30" onclick="updateQty('{{ ticket.slug }}_adult', -1)">-</button>
+                    <span id="qty-{{ ticket.slug }}_adult" class="font-bold text-lg w-6 text-center">0</span>
+                    <button class="qty-circle w-8 h-8 rounded-full border-indigo-600 flex items-center justify-center text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30" onclick="updateQty('{{ ticket.slug }}_adult', 1)">+</button>
+                </div>
+            </div>
+
+            <!-- Anak -->
+            <div class="flex justify-between items-center">
+                <div class="text-sm">
+                    <div class="font-medium">Anak-anak</div>
+                    <div id="price-{{ ticket.slug }}_child" class="font-semibold text-indigo-600">Rp {{ "{:,}".format(ticket.price_child) }}</div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button class="qty-circle w-8 h-8 rounded-full border-indigo-600 flex items-center justify-center text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30" onclick="updateQty('{{ ticket.slug }}_child', -1)">-</button>
+                    <span id="qty-{{ ticket.slug }}_child" class="font-bold text-lg w-6 text-center">0</span>
+                    <button class="qty-circle w-8 h-8 rounded-full border-indigo-600 flex items-center justify-center text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30" onclick="updateQty('{{ ticket.slug }}_child', 1)">+</button>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center p-8 text-slate-500">
+            <p>Belum ada tiket yang tersedia saat ini.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- 4) Tambahan (Add-ons) -->
+    {% if addons %}
+    <div class="framer-card mb-4 bg-white dark:bg-slate-900 border border-transparent rounded-2xl shadow-lg p-6">
+        <h3 class="text-lg font-medium mb-3">Tambahan</h3>
+        <div class="grid grid-cols-1 gap-3">
+            {% for addon in addons %}
+            <button type="button" class="addon-card w-full border rounded-lg p-3 text-left transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-800" 
+                    data-slug="{{ addon.slug }}" data-price="{{ addon.price }}" data-category="{{ addon.category or 'personal' }}" data-selected="false" onclick="toggleAddon(this)">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <div class="font-medium">{{ addon.name }}</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400">{{ addon.description }}</div>
+                    </div>
+                    <div class="text-sm font-semibold">Rp {{ "{:,}".format(addon.price) }}</div>
+                </div>
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 5) Ringkasan -->
+    <div class="framer-card mb-6 bg-white dark:bg-slate-900 border border-transparent rounded-2xl shadow-lg p-6">
+        <h3 class="font-semibold mb-3">Ringkasan</h3>
+        <div class="space-y-2 text-sm text-slate-700 dark:text-slate-200">
+            <div class="flex justify-between"><span>Tipe</span><span id="summaryType">Personal</span></div>
+            <div class="flex justify-between"><span>Tanggal</span><span id="summaryDate">-</span></div>
+            <div class="flex justify-between"><span>Tiket</span><span id="summaryTickets">-</span></div>
+            <div class="flex justify-between"><span>Tambahan</span><span id="summaryAddons">-</span></div>
+            <div class="flex justify-between text-base font-semibold pt-2 border-t mt-2"><span>Total</span><span id="summaryTotal">Rp 0</span></div>
+        </div>
+    </div>
+
+    <!-- 6) Button pesan (desktop only) -->
+    <div class="mb-12 md:mb-8 hidden md:block">
+        <button id="checkoutBtnDesktop" class="w-full py-3 rounded-xl font-semibold bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 transition-colors">
+            Pesan Tiket
+        </button>
+    </div>
+
+</section>
+
+<!-- Mobile fixed CTA -->
+<div class="fixed bottom-0 left-0 w-full md:hidden z-50 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+    <div class="p-4 flex items-center justify-between gap-4 max-w-3xl mx-auto">
+        <div>
+            <div class="text-sm text-slate-500 dark:text-slate-400">Total</div>
+            <div class="font-semibold text-lg" id="bottomTotal">Rp 0</div>
+        </div>
+        <button id="checkoutBtnMobile" class="py-3 px-6 rounded-xl font-semibold bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 transition-colors">
+            Pesan
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Style constants
+    const SELECTED_STYLE = "border-indigo-600 ring-1 ring-indigo-600 bg-indigo-50 dark:bg-indigo-900/20";
+    const DESELECTED_STYLE = "border-slate-200 hover:bg-slate-50";
+    const MIN_GROUP_ORDER = {{ min_group_order }};
+
+    const ticketPrices = {};
+    {% for ticket in tickets %}
+    ticketPrices["{{ ticket.slug }}_adult"] = {{ ticket.price_adult }};
+    ticketPrices["{{ ticket.slug }}_child"] = {{ ticket.price_child }};
+    {% endfor %}
+    
+    let counts = {};
+    for (let key in ticketPrices) counts[key] = 0;
+    
+    let selectedAddons = new Set();
+    const addonPrices = {};
+    {% for addon in addons %}
+    addonPrices["{{ addon.slug }}"] = {{ addon.price }};
+    {% endfor %}
+
+    // --- VISIT TYPE LOGIC ---
+    const visitPersonal = document.getElementById('visitPersonal');
+    const visitGroup = document.getElementById('visitGroup');
+    const personalLabel = document.getElementById('personalLabel');
+    const groupLabel = document.getElementById('groupLabel');
+    const groupForm = document.getElementById('groupForm');
+    const summaryType = document.getElementById('summaryType');
+
+    function updateVisitType() {
+        const isPersonal = visitPersonal.checked;
+        
+        if(isPersonal) {
+            personalLabel.classList.add('selected', 'border-indigo-600', 'ring-1', 'ring-indigo-600');
+            groupLabel.classList.remove('selected', 'border-indigo-600', 'ring-1', 'ring-indigo-600');
+            groupForm.classList.add('hidden');
+            summaryType.innerText = "Personal";
+        } else {
+            groupLabel.classList.add('selected', 'border-indigo-600', 'ring-1', 'ring-indigo-600');
+            personalLabel.classList.remove('selected', 'border-indigo-600', 'ring-1', 'ring-indigo-600');
+            groupForm.classList.remove('hidden');
+            summaryType.innerText = "Group";
+        }
+
+        // Filter Tickets
+        document.querySelectorAll('.ticket-card').forEach(card => {
+            const cat = card.getAttribute('data-category');
+            if (isPersonal) {
+                if (cat === 'group') card.classList.add('hidden');
+                else card.classList.remove('hidden');
+            } else {
+                if (cat === 'personal') card.classList.add('hidden');
+                else card.classList.remove('hidden');
+            }
+        });
+
+        // Filter Addons
+        document.querySelectorAll('.addon-card').forEach(card => {
+            const cat = card.getAttribute('data-category');
+            if (isPersonal) {
+                if (cat === 'group') card.classList.add('hidden');
+                else card.classList.remove('hidden');
+            } else {
+                if (cat === 'personal') card.classList.add('hidden');
+                else card.classList.remove('hidden');
+            }
+        });
+        
+        // Reset selections when switching to avoid invalid state
+        resetSelections();
+    }
+    
+    function resetSelections() {
+        // Reset ticket counts
+        for (let key in counts) {
+            counts[key] = 0;
+            const el = document.getElementById(`qty-${key}`);
+            if(el) el.innerText = '0';
+        }
+        
+        // Reset addons
+        selectedAddons.clear();
+        document.querySelectorAll('.addon-card').forEach(btn => {
+            btn.setAttribute('data-selected', 'false');
+            btn.classList.remove('border-indigo-600', 'ring-1', 'ring-indigo-600', 'bg-indigo-50', 'dark:bg-indigo-900/20');
+            btn.classList.add('border-slate-200');
+        });
+        
+        recalc();
+    }
+
+    personalLabel.addEventListener('click', () => {
+        visitPersonal.checked = true;
+        updateVisitType();
+    });
+
+    groupLabel.addEventListener('click', () => {
+        visitGroup.checked = true;
+        updateVisitType();
+    });
+
+    // --- TICKET LOGIC ---
+    function updateQty(slug, delta) {
+        counts[slug] = Math.max(0, counts[slug] + delta);
+        document.getElementById(`qty-${slug}`).innerText = counts[slug];
+        recalc();
+    }
+
+    // --- ADDON LOGIC ---
+    function toggleAddon(btn) {
+        const slug = btn.getAttribute('data-slug');
+        const isSelected = btn.getAttribute('data-selected') === 'true';
+        
+        if (!isSelected) {
+            btn.setAttribute('data-selected', 'true');
+            btn.classList.add('border-indigo-600', 'ring-1', 'ring-indigo-600', 'bg-indigo-50', 'dark:bg-indigo-900/20');
+            btn.classList.remove('border-slate-200');
+            selectedAddons.add(slug);
+        } else {
+            btn.setAttribute('data-selected', 'false');
+            btn.classList.remove('border-indigo-600', 'ring-1', 'ring-indigo-600', 'bg-indigo-50', 'dark:bg-indigo-900/20');
+            btn.classList.add('border-slate-200');
+            selectedAddons.delete(slug);
+        }
+        recalc();
+    }
+
+    // --- CALCULATION & SUMMARY ---
+    function recalc() {
+        let total = 0;
+        let ticketSummary = [];
+        let addonSummary = [];
+
+        // Tickets
+        for (let slug in counts) {
+            if (counts[slug] > 0) {
+                total += counts[slug] * ticketPrices[slug];
+                ticketSummary.push(`${slug.replace(/_/g, ' ')} (${counts[slug]})`);
+            }
+        }
+
+        // Addons
+        selectedAddons.forEach(slug => {
+            total += addonPrices[slug];
+            addonSummary.push(slug.replace(/_/g, ' '));
+        });
+
+        // Update Summary UI
+        document.getElementById('summaryTickets').innerText = ticketSummary.length ? ticketSummary.join(', ') : '-';
+        document.getElementById('summaryAddons').innerText = addonSummary.length ? addonSummary.join(', ') : '-';
+        
+        const formattedTotal = 'Rp ' + total.toLocaleString('id-ID');
+        document.getElementById('summaryTotal').innerText = formattedTotal;
+        document.getElementById('bottomTotal').innerText = formattedTotal;
+    }
+
+    // --- FLATPICKR ---
+    const datePicker = flatpickr("#datePicker", { 
+        minDate: "today", 
+        dateFormat: "Y-m-d",
+        onChange: function(selectedDates, dateStr) {
+            checkDate(dateStr);
+        }
+    });
+
+    async function checkDate(dateStr) {
+        try {
+            // Show loading or disable inputs if needed
+            const res = await fetch(`/api/check-date?date=${dateStr}`);
+            const data = await res.json();
+            
+            if (data.status === 'success') {
+                if (data.type === 'closed') {
+                    alert('Maaf, wahana tutup pada tanggal yang dipilih. Silakan pilih tanggal lain.');
+                    datePicker.clear();
+                    document.getElementById('summaryDate').innerText = '-';
+                    return;
+                }
+                
+                // Update prices in global object
+                for (let key in data.prices) {
+                    ticketPrices[key] = data.prices[key];
+                    // Update UI
+                    const el = document.getElementById(`price-${key}`);
+                    if (el) {
+                        el.innerText = 'Rp ' + data.prices[key].toLocaleString('id-ID');
+                    }
+                }
+                
+                // Update Summary Date text with Type
+                const typeName = {
+                    'regular': 'Reguler',
+                    'weekend': 'Akhir Pekan',
+                    'high_season': 'High Season'
+                };
+                document.getElementById('summaryDate').innerText = `${dateStr} (${typeName[data.type]})`;
+                
+                recalc();
+                
+            } else {
+                console.error(data.message);
+            }
+        } catch (e) {
+            console.error('Error checking date:', e);
+            alert('Gagal memeriksa ketersediaan tanggal. Periksa koneksi internet Anda.');
+        }
+    }
+
+    // --- CHECKOUT ---
+    function doCheckout() {
+        const date = document.getElementById('datePicker').value;
+        if(!date) return alert('Pilih tanggal kunjungan terlebih dahulu!');
+
+        let total = 0;
+        let totalTickets = 0;
+        for (let s in counts) {
+            total += counts[s] * ticketPrices[s];
+            totalTickets += counts[s];
+        }
+        selectedAddons.forEach(s => total += addonPrices[s]);
+
+        if (total === 0) return alert('Pilih minimal satu tiket atau addon!');
+
+        const isGroup = visitGroup.checked;
+        if (isGroup) {
+            if (totalTickets < MIN_GROUP_ORDER) return alert(`Untuk pesanan Group, minimal pemesanan adalah ${MIN_GROUP_ORDER} tiket!`);
+        }
+
+        const payload = {
+            date: date,
+            type: isGroup ? 'group' : 'personal',
+            group_details: null, // Will be filled in checkout
+            counts: counts,
+            addons: Array.from(selectedAddons),
+            total: total
+        };
+
+        document.getElementById('orderDataInput').value = JSON.stringify(payload);
+        document.getElementById('checkoutForm').submit();
+    }
+
+    document.getElementById('checkoutBtnDesktop').addEventListener('click', doCheckout);
+    document.getElementById('checkoutBtnMobile').addEventListener('click', doCheckout);
+
+    // Initial state
+    updateVisitType();
+</script>
+
+<form id="checkoutForm" method="POST" action="{{ url_for('main.checkout') }}" class="hidden">
+    <input type="hidden" name="order_data" id="orderDataInput">
+</form>
+{% endblock %}

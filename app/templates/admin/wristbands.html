@@ -1,0 +1,65 @@
+{% extends "admin_base.html" %}
+{% block title %}Laporan Tukar Gelang{% endblock %}
+
+{% block content %}
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+    <div>
+        <h1 class="text-2xl font-bold">Laporan Tukar Gelang</h1>
+        <p class="text-slate-500">Daftar riwayat penukaran gelang.</p>
+    </div>
+    
+    <form class="flex flex-col md:flex-row gap-2 bg-white dark:bg-slate-800 p-2 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+        <input type="date" name="date" value="{{ filter_date }}" class="p-2 border rounded-md text-sm dark:bg-slate-900 dark:border-slate-700">
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">
+            Filter
+        </button>
+        {% if filter_date != now_date %}
+        <a href="{{ url_for('main.admin_wristbands') }}" class="flex items-center justify-center px-3 py-2 text-slate-500 hover:text-slate-700 border border-slate-200 rounded-md">
+            Reset
+        </a>
+        {% endif %}
+    </form>
+</div>
+
+<div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+            <thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                <tr>
+                    <th class="px-6 py-4 font-semibold">Waktu Tukar</th>
+                    <th class="px-6 py-4 font-semibold">Kode Tiket</th>
+                    <th class="px-6 py-4 font-semibold">Nama Pengunjung</th>
+                    <th class="px-6 py-4 font-semibold">Tipe Tiket</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                {% for wb in wristbands %}
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-900/50">
+                    <td class="px-6 py-4 font-mono text-slate-500">
+                        {{ wb.wristband_at.strftime('%H:%M:%S') }}
+                        <span class="text-xs block text-slate-400">{{ wb.wristband_at.strftime('%d %b %Y') }}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="font-mono font-bold">{{ wb.invoice_number }}</span>
+                        <div class="text-xs text-slate-400 font-mono" title="{{ wb.uuid }}">{{ wb.uuid }}</div>
+                    </td>
+                    <td class="px-6 py-4 font-medium">
+                        {{ wb.customer_name }}
+                        <span class="block text-xs text-slate-400">{{ wb.customer_email }}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="uppercase text-xs font-bold px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded">{{ wb.visit_type }}</span>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="px-6 py-12 text-center text-slate-400">
+                        Tidak ada data tukar gelang untuk filter ini.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

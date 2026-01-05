@@ -1,0 +1,87 @@
+{% extends "admin_base.html" %}
+{% block title %}Manajemen Kalender{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex justify-between items-center">
+    <div>
+        <h1 class="text-2xl font-bold">Manajemen Kalender</h1>
+        <p class="text-slate-500">Atur hari libur khusus dan tanggal High Season.</p>
+    </div>
+    <button onclick="document.getElementById('addDateModal').showModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Tambah Tanggal
+    </button>
+</div>
+
+<!-- List Dates -->
+<div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+            <thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                <tr>
+                    <th class="px-4 py-3 font-semibold">Tanggal</th>
+                    <th class="px-4 py-3 font-semibold">Tipe</th>
+                    <th class="px-4 py-3 font-semibold">Keterangan</th>
+                    <th class="px-4 py-3 font-semibold text-right">Aksi</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                {% for item in special_dates %}
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-900/50">
+                    <td class="px-4 py-3 font-mono">{{ item.date.strftime('%d %B %Y') }}</td>
+                    <td class="px-4 py-3">
+                        {% if item.type == 'closed' %}
+                        <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">Tutup / Libur</span>
+                        {% else %}
+                        <span class="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full">High Season</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3">{{ item.description }}</td>
+                    <td class="px-4 py-3 text-right">
+                        <a href="{{ url_for('main.delete_special_date', id=item.id) }}" onclick="return confirm('Hapus tanggal ini?')" class="text-red-600 hover:text-red-800">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="px-4 py-8 text-center text-slate-500">
+                        Belum ada tanggal khusus yang diatur.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Modal -->
+<dialog id="addDateModal" class="modal rounded-lg shadow-xl p-0 w-full max-w-md backdrop:bg-slate-900/50">
+    <div class="bg-white dark:bg-slate-800 p-6">
+        <h3 class="font-bold text-lg mb-4">Tambah Tanggal Khusus</h3>
+        <form action="{{ url_for('main.add_special_date') }}" method="POST">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Tanggal</label>
+                    <input type="date" name="date" required class="w-full p-2 border rounded-lg bg-transparent dark:border-slate-600 dark:bg-slate-700">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Tipe</label>
+                    <select name="type" class="w-full p-2 border rounded-lg bg-transparent dark:border-slate-600 dark:bg-slate-700">
+                        <option value="closed">Tutup / Libur</option>
+                        <option value="high_season">High Season (Harga Khusus)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Keterangan</label>
+                    <input type="text" name="description" placeholder="Contoh: Tahun Baru, Maintenance, dll" required class="w-full p-2 border rounded-lg bg-transparent dark:border-slate-600 dark:bg-slate-700">
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 mt-6">
+                <button type="button" onclick="document.getElementById('addDateModal').close()" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Batal</button>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Simpan</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+{% endblock %}

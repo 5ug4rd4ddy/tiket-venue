@@ -1,0 +1,115 @@
+{% extends "admin_base.html" %}
+{% block title %}Pengaturan Situs{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold">Pengaturan Situs</h1>
+    <p class="text-slate-500">Sesuaikan identitas, operasional, dan informasi taman hiburan.</p>
+</div>
+
+<div class="grid grid-cols-1 gap-8">
+    <!-- General Settings -->
+    <div class="bg-white dark:bg-slate-800 p-8 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+        <h3 class="text-lg font-bold mb-6 border-b pb-2 dark:border-slate-700">Umum & Operasional</h3>
+        <form action="{{ url_for('main.admin_settings') }}" method="POST" class="space-y-6" enctype="multipart/form-data">
+            <div>
+                <label class="block text-sm font-bold mb-2">Nama Taman Hiburan</label>
+                <input name="park_name" value="{{ settings.park_name }}" class="w-full p-3 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-bold mb-2">Informasi Kontak & Lokasi</label>
+                <input name="park_info" value="{{ settings.park_info }}" class="w-full p-3 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold mb-2">Jam Operasional (Teks)</label>
+                <input name="opening_hours" value="{{ settings.opening_hours }}" class="w-full p-3 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
+            </div>
+
+            <!-- Weekly Closed Days -->
+            <div>
+                <label class="block text-sm font-bold mb-3">Hari Libur Rutin (Tutup)</label>
+                <div class="flex flex-wrap gap-4 p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
+                    {% set days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'] %}
+                    {% set closed = settings.weekly_closed_days.split(',') if settings.weekly_closed_days else [] %}
+                    {% for i in range(7) %}
+                    <label class="flex items-center gap-2 cursor-pointer select-none">
+                        <input type="checkbox" name="weekly_closed_days" value="{{ i }}" {% if i|string in closed %}checked{% endif %} class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500">
+                        <span class="text-sm">{{ days[i] }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+                <p class="text-xs text-slate-500 mt-2">Wahana akan otomatis tutup pada hari yang dipilih.</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-bold mb-2">Min. Order Group</label>
+                    <input type="number" name="min_group_order" value="{{ settings.min_group_order }}" class="w-full p-3 border rounded-lg bg-transparent dark:border-slate-600">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-2">Timeout Bayar (Menit)</label>
+                    <input type="number" name="payment_timeout_minutes" value="{{ settings.payment_timeout_minutes }}" class="w-full p-3 border rounded-lg bg-transparent dark:border-slate-600">
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <label class="flex items-center gap-3 p-3 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors dark:border-slate-600">
+                    <input type="checkbox" name="allow_wristband" {% if settings.allow_wristband %}checked{% endif %} class="w-5 h-5 text-blue-600 rounded">
+                    <div>
+                        <span class="font-medium">Aktifkan Fitur Gelang (Wristband)</span>
+                        <span class="text-xs text-slate-500 block">Staff dapat menukar tiket dengan gelang fisik.</span>
+                    </div>
+                </label>
+
+                <label class="flex items-center gap-3 p-3 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors dark:border-slate-600">
+                    <input type="checkbox" name="allow_gate" {% if settings.allow_gate %}checked{% endif %} class="w-5 h-5 text-blue-600 rounded">
+                    <div>
+                        <span class="font-medium">Aktifkan Gate (Turnstile)</span>
+                        <span class="text-xs text-slate-500 block">Pengunjung dapat scan QR Code langsung di gate.</span>
+                    </div>
+                </label>
+            </div>
+
+            <div class="border-t pt-6 dark:border-slate-700">
+                <h4 class="font-bold mb-4">Gambar & Logo</h4>
+                <div class="grid grid-cols-1 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Logo</label>
+                        {% if settings.logo_url %}
+                        <div class="mb-3 p-2 border rounded bg-slate-50 dark:bg-slate-900 w-fit">
+                            {% if settings.logo_url.startswith('http') %}
+                            <img src="{{ settings.logo_url }}" alt="Current Logo" class="h-16 object-contain">
+                            {% else %}
+                            <img src="{{ url_for('static', filename='uploads/' + settings.logo_url) }}" alt="Current Logo" class="h-16 object-contain">
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        <input type="file" name="logo" accept="image/*" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Hero Image (Home)</label>
+                        {% if settings.hero_image_url %}
+                        <div class="mb-3 p-2 border rounded bg-slate-50 dark:bg-slate-900 w-fit">
+                            {% if settings.hero_image_url.startswith('http') %}
+                            <img src="{{ settings.hero_image_url }}" alt="Current Hero" class="h-32 object-cover rounded">
+                            {% else %}
+                            <img src="{{ url_for('static', filename='uploads/' + settings.hero_image_url) }}" alt="Current Hero" class="h-32 object-cover rounded">
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        <input type="file" name="hero_image" accept="image/*" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-4 flex justify-end">
+                <button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium flex items-center gap-2 w-full justify-center md:w-auto">
+                    Simpan Pengaturan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "email/base_email.html" %}
+
+{% block title %}E-Ticket - {{ order.invoice_number }}{% endblock %}
+
+{% block content %}
+    <h2>Halo {{ order.customer_name }},</h2>
+    <p>Pembayaran Anda berhasil! Berikut adalah E-Ticket Anda untuk masuk ke {{ settings.park_name if settings else 'Tiket Wahana' }}.</p>
+    
+    <div class="qr-container">
+        <p style="margin-bottom: 15px; font-weight: bold; color: #64748b;">SCAN QR CODE INI DI PINTU MASUK</p>
+        <img src="{{ qr_code }}" alt="QR Code" class="qr-code">
+        <div class="ticket-code">{{ order.uuid }}</div>
+    </div>
+
+    <table class="info-table">
+        <tr>
+            <th>Tanggal Kunjungan</th>
+            <td>{{ order.visit_date | date_with_day }}</td>
+        </tr>
+        <tr>
+            <th>Jenis Kunjungan</th>
+            <td>{{ order.visit_type|upper }}</td>
+        </tr>
+        <tr>
+            <th>No. Invoice</th>
+            <td>{{ order.invoice_number }}</td>
+        </tr>
+    </table>
+
+    <div style="background: #eff6ff; padding: 15px; border-radius: 8px; margin-top: 20px;">
+        <h3 style="margin-top: 0; color: #1e40af; font-size: 16px;">Detail Pesanan</h3>
+        <ul style="margin: 0; padding-left: 20px; color: #1e3a8a;">
+            {% for item in details.get('items', []) %}
+                <li>{{ item.name }} x{{ item.qty }}</li>
+            {% endfor %}
+            {% for addon in details.get('addons', []) %}
+                <li>{{ addon.name }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <p style="margin-top: 20px; font-size: 14px; color: #64748b;">
+        * Harap tunjukkan QR Code ini kepada petugas di loket masuk.<br>
+        * Tiket ini hanya berlaku pada tanggal kunjungan yang tertera.
+    </p>
+{% endblock %}

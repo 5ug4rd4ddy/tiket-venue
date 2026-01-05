@@ -1,0 +1,385 @@
+{% extends "admin_base.html" %}
+{% block title %}Riwayat Transaksi{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold">Riwayat Transaksi</h1>
+    <p class="text-slate-500">Semua pesanan yang masuk ke sistem.</p>
+</div>
+
+<!-- Filters -->
+<div class="mb-6 bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+    <form method="GET" class="flex flex-wrap gap-4 items-end">
+        <div>
+            <label class="block text-sm font-medium mb-1">Tanggal Mulai</label>
+            <input type="date" name="start_date" value="{{ request.args.get('start_date', '') }}" class="p-2 border rounded-lg bg-transparent dark:border-slate-600">
+        </div>
+        <div>
+            <label class="block text-sm font-medium mb-1">Tanggal Akhir</label>
+            <input type="date" name="end_date" value="{{ request.args.get('end_date', '') }}" class="p-2 border rounded-lg bg-transparent dark:border-slate-600">
+        </div>
+        <div>
+            <label class="block text-sm font-medium mb-1">Status Pembayaran</label>
+            <select name="status" class="p-2 border rounded-lg bg-transparent dark:border-slate-600 dark:bg-slate-800">
+                <option value="all">Semua Status</option>
+                <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="paid" {% if request.args.get('status') == 'paid' %}selected{% endif %}>Paid</option>
+                <option value="failed" {% if request.args.get('status') == 'failed' %}selected{% endif %}>Failed</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-medium mb-1">Metode Bayar</label>
+            <select name="payment_method" class="p-2 border rounded-lg bg-transparent dark:border-slate-600 dark:bg-slate-800">
+                <option value="all">Semua Metode</option>
+                <option value="qris" {% if request.args.get('payment_method') == 'qris' %}selected{% endif %}>QRIS</option>
+                <option value="gopay" {% if request.args.get('payment_method') == 'gopay' %}selected{% endif %}>GoPay</option>
+                <option value="shopeepay" {% if request.args.get('payment_method') == 'shopeepay' %}selected{% endif %}>ShopeePay</option>
+                <option value="ovo" {% if request.args.get('payment_method') == 'ovo' %}selected{% endif %}>OVO</option>
+                <option value="linkaja" {% if request.args.get('payment_method') == 'linkaja' %}selected{% endif %}>LinkAja</option>
+                <option value="va_bca" {% if request.args.get('payment_method') == 'va_bca' %}selected{% endif %}>VA BCA</option>
+                <option value="va_mandiri" {% if request.args.get('payment_method') == 'va_mandiri' %}selected{% endif %}>VA Mandiri</option>
+                <option value="va_bni" {% if request.args.get('payment_method') == 'va_bni' %}selected{% endif %}>VA BNI</option>
+                <option value="card" {% if request.args.get('payment_method') == 'card' %}selected{% endif %}>Kartu Kredit/Debit</option>
+                <option value="cash" {% if request.args.get('payment_method') == 'cash' %}selected{% endif %}>Cash / Tunai</option>
+            </select>
+        </div>
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+            Filter Data
+        </button>
+        <a href="{{ url_for('main.export_transactions', start_date=request.args.get('start_date'), end_date=request.args.get('end_date'), status=request.args.get('status'), payment_method=request.args.get('payment_method')) }}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Export CSV
+        </a>
+        {% if request.args.get('start_date') or request.args.get('status') %}
+        <a href="{{ url_for('main.admin_transactions') }}" class="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 px-4 py-2">
+            Reset
+        </a>
+        {% endif %}
+    </form>
+</div>
+
+<div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+            <thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                <tr>
+                    <th class="px-6 py-4 font-semibold">No. Invoice</th>
+                    <th class="px-6 py-4 font-semibold">No. E-Tiket</th>
+                    <th class="px-6 py-4 font-semibold">Tanggal Kunjungan</th>
+                    <th class="px-6 py-4 font-semibold">Tipe</th>
+                    <th class="px-6 py-4 font-semibold">Status</th>
+                    <th class="px-6 py-4 font-semibold text-center">Detail</th>
+                    <th class="px-6 py-4 font-semibold text-right">Total Harga</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                {% for order in orders %}
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
+                    <td class="px-6 py-4 font-mono text-slate-500 font-medium">
+                        {{ order.invoice_number or '#' ~ order.id }}
+                        <div class="text-xs opacity-60">{{ order.created_at.strftime('%d %b %Y, %H:%M') }}</div>
+                    </td>
+                    <td class="px-6 py-4 font-mono text-xs text-slate-500">
+                        {% if order.payment_status == 'paid' %}
+                        <span class="block" title="{{ order.uuid }}">{{ order.uuid }}</span>
+                        {% else %}
+                        <span class="text-slate-300">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4">{{ order.visit_date }}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-1 rounded text-xs font-medium 
+                            {% if order.visit_type == 'group' %} bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300
+                            {% else %} bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 {% endif %}">
+                            {{ order.visit_type|title }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-1 rounded-full text-xs font-medium 
+                            {% if order.payment_status == 'paid' %} bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300
+                            {% elif order.payment_status == 'pending' %} bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300
+                            {% else %} bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 {% endif %}">
+                            {{ order.payment_status|title }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <button onclick="showDetail({{ order.id }})" class="text-blue-600 hover:text-blue-800 dark:hover:text-blue-400 font-medium text-sm flex items-center justify-center gap-1 mx-auto">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            Lihat
+                        </button>
+                    </td>
+                    <td class="px-6 py-4 text-right font-bold font-mono">
+                        Rp {{ "{:,}".format(order.total_price) }}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="px-6 py-12 text-center text-slate-400">
+                        Belum ada data transaksi yang sesuai filter.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Detail Modal -->
+<div id="detailModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 backdrop-blur-sm opacity-0 transition-opacity duration-300">
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-xl w-full max-w-2xl shadow-2xl transform scale-95 transition-transform duration-300 max-h-[90vh] overflow-y-auto" id="modalContent">
+        <div class="flex justify-between items-center mb-6 border-b dark:border-slate-700 pb-4">
+            <div>
+                <h2 class="text-xl font-bold">Detail Transaksi</h2>
+                <p class="text-sm text-slate-500" id="modalInvoice">Loading...</p>
+            </div>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+        
+        <div id="modalBody" class="space-y-6">
+            <div class="animate-pulse space-y-4">
+                <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div>
+                <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
+                <div class="h-32 bg-slate-200 dark:bg-slate-700 rounded w-full"></div>
+            </div>
+        </div>
+        
+        <div class="mt-6 pt-4 border-t dark:border-slate-700 flex justify-end">
+            <button onclick="closeModal()" class="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition-colors">Tutup</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const modal = document.getElementById('detailModal');
+    const modalContent = document.getElementById('modalContent');
+    const modalBody = document.getElementById('modalBody');
+    const modalInvoice = document.getElementById('modalInvoice');
+
+    function openModal() {
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modalContent.classList.remove('scale-95');
+            modalContent.classList.add('scale-100');
+        }, 10);
+    }
+
+    function closeModal() {
+        modal.classList.add('opacity-0');
+        modalContent.classList.remove('scale-100');
+        modalContent.classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+    
+    // Close on click outside
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+
+    async function showDetail(orderId) {
+        openModal();
+        modalInvoice.textContent = 'Memuat data...';
+        modalBody.innerHTML = `
+            <div class="animate-pulse space-y-4">
+                <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div>
+                <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
+                <div class="h-32 bg-slate-200 dark:bg-slate-700 rounded w-full"></div>
+            </div>
+        `;
+        
+        try {
+            const response = await fetch(`/dashboard/transaction/${orderId}/details`);
+            const data = await response.json();
+            
+            if (data.error) {
+                modalBody.innerHTML = `<div class="text-red-500">Error: ${data.error}</div>`;
+                return;
+            }
+            
+            modalInvoice.textContent = data.invoice || ('#' + orderId);
+            
+            // Build Items HTML
+            let itemsHtml = '';
+            if (data.details.items && data.details.items.length > 0) {
+                itemsHtml = `<table class="w-full text-sm mb-4">
+                    <thead class="bg-slate-50 dark:bg-slate-900">
+                        <tr>
+                            <th class="p-2 text-left">Item</th>
+                            <th class="p-2 text-center">Qty</th>
+                            <th class="p-2 text-right">Harga</th>
+                            <th class="p-2 text-right">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-700">`;
+                
+                data.details.items.forEach(item => {
+                    itemsHtml += `
+                        <tr>
+                            <td class="p-2">${item.name}</td>
+                            <td class="p-2 text-center">${item.qty}</td>
+                            <td class="p-2 text-right">Rp ${item.price.toLocaleString()}</td>
+                            <td class="p-2 text-right font-medium">Rp ${item.subtotal.toLocaleString()}</td>
+                        </tr>
+                    `;
+                });
+                
+                itemsHtml += `</tbody></table>`;
+            }
+            
+            // Addons
+            if (data.details.addons && data.details.addons.length > 0) {
+                itemsHtml += `<div class="mb-2 font-semibold text-sm">Addons:</div>
+                <ul class="list-disc list-inside text-sm mb-4 text-slate-600 dark:text-slate-400">`;
+                data.details.addons.forEach(addon => {
+                    itemsHtml += `<li>${addon.name} - Rp ${addon.price.toLocaleString()}</li>`;
+                });
+                itemsHtml += `</ul>`;
+            }
+
+            modalBody.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">Informasi Pelanggan</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between border-b dark:border-slate-700 pb-1">
+                                <span class="text-slate-500">Nama</span>
+                                <span class="font-medium">${data.customer.name || '-'}</span>
+                            </div>
+                            <div class="flex justify-between border-b dark:border-slate-700 pb-1">
+                                <span class="text-slate-500">Email</span>
+                                <span class="font-medium">${data.customer.email || '-'}</span>
+                            </div>
+                            <div class="flex justify-between border-b dark:border-slate-700 pb-1">
+                                <span class="text-slate-500">Telepon</span>
+                                <span class="font-medium">${data.customer.phone || '-'}</span>
+                            </div>
+                            <div class="flex justify-between border-b dark:border-slate-700 pb-1">
+                                <span class="text-slate-500">Domisili</span>
+                                <span class="font-medium">${data.customer.domicile || '-'}</span>
+                            </div>
+                            ${data.group_info ? `
+                            <div class="mt-4 pt-2 border-t dark:border-slate-700">
+                                <h4 class="text-xs font-bold text-indigo-500 uppercase mb-2">Info Group</h4>
+                                <div class="flex justify-between border-b dark:border-slate-700 pb-1">
+                                    <span class="text-slate-500">Nama Group</span>
+                                    <span class="font-medium">${data.group_info.name || '-'}</span>
+                                </div>
+                                <div class="flex justify-between border-b dark:border-slate-700 pb-1">
+                                    <span class="text-slate-500">Peserta</span>
+                                    <span class="font-medium">${data.group_info.size || '-'} Pax</span>
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">Informasi Pesanan</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between border-b dark:border-slate-700 pb-1">
+                                <span class="text-slate-500">Tgl Kunjungan</span>
+                                <span class="font-medium">${data.visit_date}</span>
+                            </div>
+                            <div class="flex justify-between border-b dark:border-slate-700 pb-1">
+                                <span class="text-slate-500">Tipe Kunjungan</span>
+                                <span class="font-medium capitalize">${data.visit_type}</span>
+                            </div>
+                            <div class="flex justify-between border-b dark:border-slate-700 pb-1">
+                                <span class="text-slate-500">Metode Bayar</span>
+                                <span class="font-medium capitalize">${data.payment.method || '-'}</span>
+                            </div>
+                            <div class="flex justify-between border-b dark:border-slate-700 pb-1 items-center">
+                                <span class="text-slate-500">Status Bayar</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-medium capitalize ${data.payment.status === 'paid' ? 'text-green-600' : 'text-yellow-600'}" id="currentStatusBadge">${data.payment.status}</span>
+                                    <button onclick="toggleStatusEdit()" class="text-xs text-blue-600 hover:underline">Ubah</button>
+                                </div>
+                            </div>
+                            <div id="statusEditForm" class="hidden mt-2 p-2 bg-slate-50 dark:bg-slate-900 rounded border dark:border-slate-700">
+                                <label class="block text-xs font-semibold mb-1">Update Status:</label>
+                                <div class="flex gap-2">
+                                    <select id="newStatusSelect" class="text-sm p-1 border rounded bg-white dark:bg-slate-800 dark:border-slate-600 w-full">
+                                        <option value="pending" ${data.payment.status === 'pending' ? 'selected' : ''}>Pending</option>
+                                        <option value="paid" ${data.payment.status === 'paid' ? 'selected' : ''}>Paid</option>
+                                        <option value="failed" ${data.payment.status === 'failed' ? 'selected' : ''}>Failed</option>
+                                    </select>
+                                    <button onclick="updateStatus(${orderId})" class="bg-blue-600 text-white text-xs px-2 py-1 rounded hover:bg-blue-700">Simpan</button>
+                                </div>
+                            </div>
+                            
+                            ${data.payment.status === 'paid' ? `
+                            <div class="mt-4 pt-2 border-t dark:border-slate-700">
+                                <a href="/dashboard/transaction/${orderId}/invoice" target="_blank" class="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm py-2 px-3 rounded-lg transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                    Download Invoice
+                                </a>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">Detail Item</h3>
+                    <div class="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4 border border-slate-100 dark:border-slate-700">
+                        ${itemsHtml}
+                        ${data.payment.discount > 0 ? `
+                        <div class="flex justify-between items-center pt-2 text-sm text-red-600">
+                            <span>Diskon ${data.payment.promo_code ? '(' + data.payment.promo_code + ')' : ''}</span>
+                            <span>- Rp ${data.payment.discount.toLocaleString()}</span>
+                        </div>` : ''}
+                        <div class="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-slate-700 mt-2">
+                            <span class="font-bold text-lg">Total Transaksi</span>
+                            <span class="font-bold text-lg text-blue-600">Rp ${data.payment.total.toLocaleString()}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } catch (e) {
+            console.error(e);
+            modalBody.innerHTML = `<div class="text-red-500">Gagal memuat data: ${e.message}</div>`;
+        }
+    }
+
+    function toggleStatusEdit() {
+        const form = document.getElementById('statusEditForm');
+        form.classList.toggle('hidden');
+    }
+
+    async function updateStatus(orderId) {
+        const newStatus = document.getElementById('newStatusSelect').value;
+        try {
+            const response = await fetch(`/dashboard/transaction/${orderId}/update-status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: newStatus })
+            });
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                // Update badge color and text
+                const badge = document.getElementById('currentStatusBadge');
+                badge.textContent = data.new_status;
+                badge.className = `font-medium capitalize ${data.new_status === 'paid' ? 'text-green-600' : 'text-yellow-600'}`;
+                
+                // Hide form
+                document.getElementById('statusEditForm').classList.add('hidden');
+                
+                // Reload page to reflect changes in table
+                window.location.reload();
+            } else {
+                alert('Gagal update status: ' + (data.error || 'Unknown error'));
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Terjadi kesalahan saat update status');
+        }
+    }
+</script>
+{% endblock %}

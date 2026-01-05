@@ -1,0 +1,158 @@
+{% extends "admin_base.html" %}
+{% block title %}Kelola Partner{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-6">
+    <div>
+        <h1 class="text-2xl font-bold">Manajemen Partner</h1>
+        <p class="text-slate-500">Kelola daftar partner untuk potongan harga grup.</p>
+    </div>
+    <button onclick="openModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Tambah Partner
+    </button>
+</div>
+
+<div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+    <table class="w-full text-left text-sm">
+        <thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+            <tr>
+                <th class="px-6 py-4 font-semibold">Nama Partner</th>
+                <th class="px-6 py-4 font-semibold">No. Telepon</th>
+                <th class="px-6 py-4 font-semibold">Email</th>
+                <th class="px-6 py-4 font-semibold">Fee (%)</th>
+                <th class="px-6 py-4 font-semibold">Status</th>
+                <th class="px-6 py-4 font-semibold text-right">Aksi</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+            {% for partner in partners %}
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-900/50">
+                <td class="px-6 py-4 font-medium">{{ partner.name }}</td>
+                <td class="px-6 py-4 font-mono">{{ partner.phone }}</td>
+                <td class="px-6 py-4 text-slate-500">{{ partner.email or '-' }}</td>
+                <td class="px-6 py-4 font-bold text-indigo-600">{{ partner.fee_percentage }}%</td>
+                <td class="px-6 py-4">
+                    <span class="px-2 py-1 rounded-full text-xs font-medium 
+                        {% if partner.is_active %} bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300
+                        {% else %} bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 {% endif %}">
+                        {{ 'Aktif' if partner.is_active else 'Nonaktif' }}
+                    </span>
+                </td>
+                <td class="px-6 py-4 text-right flex justify-end gap-3">
+                    <button 
+                        onclick="editPartner(this)"
+                        data-id="{{ partner.id }}"
+                        data-name="{{ partner.name }}"
+                        data-phone="{{ partner.phone }}"
+                        data-email="{{ partner.email }}"
+                        data-fee="{{ partner.fee_percentage }}"
+                        data-active="{{ 'true' if partner.is_active else 'false' }}"
+                        class="text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        Edit
+                    </button>
+                    <form action="{{ url_for('main.delete_partner', id=partner.id) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus partner ini?');">
+                        <button type="submit" class="text-red-500 hover:text-red-700 flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            Hapus
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="px-6 py-12 text-center text-slate-400">
+                    Belum ada partner.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal -->
+<div id="partnerModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 backdrop-blur-sm opacity-0 transition-opacity duration-300">
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-xl w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-300" id="modalContent">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold" id="modalTitle">Tambah Partner Baru</h2>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+        
+        <form id="partnerForm" action="{{ url_for('main.add_partner') }}" method="POST" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium mb-1">Nama Partner / PIC</label>
+                <input name="name" required placeholder="Nama Lengkap" class="w-full p-2 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">No. Telepon (WA)</label>
+                <input name="phone" type="tel" required placeholder="08123456789" class="w-full p-2 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
+                <p class="text-xs text-slate-500 mt-1">Nomor ini akan digunakan untuk deteksi otomatis diskon grup.</p>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Email</label>
+                <input name="email" type="email" placeholder="email@partner.com" class="w-full p-2 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Fee / Diskon (%)</label>
+                <input name="fee_percentage" type="number" min="0" max="100" required placeholder="0" class="w-full p-2 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
+            </div>
+            
+            <div>
+                <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded transition-colors">
+                    <input type="checkbox" name="is_active" id="partnerActive" class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" checked>
+                    <span class="text-sm font-medium">Status Aktif</span>
+                </label>
+            </div>
+            
+            <div class="pt-4 flex justify-end gap-2">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700">Batal</button>
+                <button type="submit" class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-medium">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const modal = document.getElementById('partnerModal');
+    const modalContent = document.getElementById('modalContent');
+    const form = document.getElementById('partnerForm');
+    const title = document.getElementById('modalTitle');
+    
+    function openModal() {
+        modal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            modal.classList.remove('opacity-0');
+            modalContent.classList.remove('scale-95');
+        });
+        
+        // Reset form for add
+        form.action = "{{ url_for('main.add_partner') }}";
+        title.innerText = "Tambah Partner Baru";
+        form.reset();
+        document.getElementById('partnerActive').checked = true;
+    }
+    
+    function closeModal() {
+        modal.classList.add('opacity-0');
+        modalContent.classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+    
+    function editPartner(btn) {
+        openModal();
+        title.innerText = "Edit Partner";
+        form.action = "/partner/edit/" + btn.dataset.id;
+        
+        form.name.value = btn.dataset.name;
+        form.phone.value = btn.dataset.phone;
+        form.email.value = btn.dataset.email === 'None' ? '' : btn.dataset.email;
+        form.fee_percentage.value = btn.dataset.fee;
+        document.getElementById('partnerActive').checked = btn.dataset.active === 'true';
+    }
+</script>
+{% endblock %}

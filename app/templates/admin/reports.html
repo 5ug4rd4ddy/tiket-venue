@@ -1,0 +1,102 @@
+{% extends "admin_base.html" %}
+{% block title %}Laporan Penjualan{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold">Laporan Penjualan</h1>
+    <p class="text-slate-500">Analisa penjualan harian dan performa tiket.</p>
+</div>
+
+<!-- Filters -->
+<div class="mb-6 bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+    <form method="GET" class="flex flex-wrap gap-4 items-end">
+        <div>
+            <label class="block text-sm font-medium mb-1">Dari Tanggal</label>
+            <input type="date" name="start_date" value="{{ start_date }}" class="p-2 border rounded-lg bg-transparent dark:border-slate-600 dark:bg-slate-800">
+        </div>
+        <div>
+            <label class="block text-sm font-medium mb-1">Sampai Tanggal</label>
+            <input type="date" name="end_date" value="{{ end_date }}" class="p-2 border rounded-lg bg-transparent dark:border-slate-600 dark:bg-slate-800">
+        </div>
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+            Tampilkan Laporan
+        </button>
+    </form>
+</div>
+
+<!-- Summary Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+        <div class="text-sm text-slate-500 mb-1">Total Pendapatan (Periode Ini)</div>
+        <div class="text-3xl font-bold text-green-600 dark:text-green-400">Rp {{ "{:,}".format(total_revenue) }}</div>
+    </div>
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+        <div class="text-sm text-slate-500 mb-1">Total Transaksi</div>
+        <div class="text-3xl font-bold text-blue-600 dark:text-blue-400">{{ "{:,}".format(total_orders) }}</div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Daily Sales Table -->
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+            <h3 class="font-bold">Laporan Penjualan Harian</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                    <tr>
+                        <th class="px-4 py-3 font-semibold">Tanggal</th>
+                        <th class="px-4 py-3 font-semibold text-center">Transaksi</th>
+                        <th class="px-4 py-3 font-semibold text-right">Pendapatan</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                    {% for item in daily_report %}
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-900/50">
+                        <td class="px-4 py-3">{{ item.date }}</td>
+                        <td class="px-4 py-3 text-center">{{ item.count }}</td>
+                        <td class="px-4 py-3 text-right font-mono">Rp {{ "{:,}".format(item.total) }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3" class="px-4 py-6 text-center text-slate-500">Tidak ada data penjualan pada periode ini.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Ticket Sales Table -->
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+            <h3 class="font-bold">Penjualan per Jenis Tiket</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                    <tr>
+                        <th class="px-4 py-3 font-semibold">Jenis Tiket</th>
+                        <th class="px-4 py-3 font-semibold text-center">Terjual (Qty)</th>
+                        <th class="px-4 py-3 font-semibold text-right">Total</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                    {% for item in ticket_report %}
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-900/50">
+                        <td class="px-4 py-3">{{ item.name }}</td>
+                        <td class="px-4 py-3 text-center">{{ item.qty }}</td>
+                        <td class="px-4 py-3 text-right font-mono">Rp {{ "{:,}".format(item.total) }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3" class="px-4 py-6 text-center text-slate-500">Tidak ada data tiket terjual.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

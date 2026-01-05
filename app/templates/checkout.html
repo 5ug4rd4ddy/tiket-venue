@@ -1,0 +1,444 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout - Konfirmasi Pesanan{% endblock %}
+
+{% block content %}
+<section class="w-[95%] max-w-3xl mx-auto py-6">
+    <h1 class="text-2xl font-bold mb-6">Konfirmasi Pesanan</h1>
+    
+    <div class="space-y-8">
+        <!-- 1. Data Pemesan -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
+            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs">1</span>
+                Data Pemesan
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium mb-1">Nama Lengkap</label>
+                    <input type="text" id="customerName" class="w-full p-3 rounded-lg border bg-transparent focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Sesuai KTP/Identitas">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Email</label>
+                    <input type="email" id="customerEmail" class="w-full p-3 rounded-lg border bg-transparent focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="example@mail.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">No. WhatsApp</label>
+                    <input type="tel" id="customerPhone" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full p-3 rounded-lg border bg-transparent focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="08123456789">
+                </div>
+                <div class="md:col-span-2 relative">
+                    <label class="block text-sm font-medium mb-1">Domisili (Kota/Kabupaten)</label>
+                    <input type="text" id="customerDomicile" list="cityList" class="w-full p-3 rounded-lg border bg-transparent focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Ketik nama kota...">
+                    <datalist id="cityList">
+                        <!-- Populated by JS -->
+                    </datalist>
+                    <p class="text-xs text-slate-400 mt-1">Pilih dari daftar yang muncul saat mengetik.</p>
+                </div>
+
+                <!-- Group Info (Moved from Home) -->
+                {% if summary.type == 'group' %}
+                <div class="md:col-span-2 pt-4 border-t border-dashed border-slate-200 dark:border-slate-700">
+                    <div class="text-sm font-semibold text-indigo-600 mb-3 uppercase tracking-wider">Informasi Group</div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Nama Group / Instansi</label>
+                            <input type="text" id="groupName" class="w-full p-3 rounded-lg border bg-transparent focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Contoh: PT Maju Jaya">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Jumlah Peserta</label>
+                            <input type="number" id="groupSize" min="1" class="w-full p-3 rounded-lg border bg-transparent focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Total anggota">
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 2. Metode Pembayaran -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
+            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs">2</span>
+                Metode Pembayaran
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                
+                <!-- QRIS -->
+                <div class="md:col-span-2">
+                    <div class="text-sm font-semibold text-slate-500 mb-2 uppercase tracking-wider">QRIS</div>
+                    <label class="flex items-center p-4 border rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition relative overflow-hidden group">
+                        <input type="radio" name="paymentMethod" value="qris" class="peer hidden" checked>
+                        <div class="w-5 h-5 rounded-full border-2 border-slate-300 peer-checked:border-indigo-600 peer-checked:bg-indigo-600 mr-4 flex items-center justify-center">
+                            <div class="w-2 h-2 rounded-full bg-white opacity-0 peer-checked:opacity-100"></div>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-semibold">QRIS (All E-Wallet)</div>
+                            <div class="text-xs text-slate-500">Scan QR Code (GoPay, OVO, Dana, LinkAja, ShopeePay, dll)</div>
+                        </div>
+                        <div class="absolute inset-0 border-2 border-transparent peer-checked:border-indigo-600 rounded-xl pointer-events-none"></div>
+                    </label>
+                </div>
+
+                <!-- E-Wallet -->
+                <div class="md:col-span-2 mt-2">
+                    <div class="text-sm font-semibold text-slate-500 mb-2 uppercase tracking-wider">E-Wallet</div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <label class="flex items-center p-4 border rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition relative overflow-hidden group">
+                            <input type="radio" name="paymentMethod" value="gopay" class="peer hidden">
+                            <div class="w-5 h-5 rounded-full border-2 border-slate-300 peer-checked:border-indigo-600 peer-checked:bg-indigo-600 mr-3 flex items-center justify-center">
+                                <div class="w-2 h-2 rounded-full bg-white opacity-0 peer-checked:opacity-100"></div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-semibold">GoPay</div>
+                            </div>
+                            <div class="absolute inset-0 border-2 border-transparent peer-checked:border-indigo-600 rounded-xl pointer-events-none"></div>
+                        </label>
+                        <label class="flex items-center p-4 border rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition relative overflow-hidden group">
+                            <input type="radio" name="paymentMethod" value="shopeepay" class="peer hidden">
+                            <div class="w-5 h-5 rounded-full border-2 border-slate-300 peer-checked:border-indigo-600 peer-checked:bg-indigo-600 mr-3 flex items-center justify-center">
+                                <div class="w-2 h-2 rounded-full bg-white opacity-0 peer-checked:opacity-100"></div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-semibold">ShopeePay</div>
+                            </div>
+                            <div class="absolute inset-0 border-2 border-transparent peer-checked:border-indigo-600 rounded-xl pointer-events-none"></div>
+                        </label>
+                        <label class="flex items-center p-4 border rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition relative overflow-hidden group">
+                            <input type="radio" name="paymentMethod" value="ovo" class="peer hidden">
+                            <div class="w-5 h-5 rounded-full border-2 border-slate-300 peer-checked:border-indigo-600 peer-checked:bg-indigo-600 mr-3 flex items-center justify-center">
+                                <div class="w-2 h-2 rounded-full bg-white opacity-0 peer-checked:opacity-100"></div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-semibold">OVO</div>
+                            </div>
+                            <div class="absolute inset-0 border-2 border-transparent peer-checked:border-indigo-600 rounded-xl pointer-events-none"></div>
+                        </label>
+                        <label class="flex items-center p-4 border rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition relative overflow-hidden group">
+                            <input type="radio" name="paymentMethod" value="linkaja" class="peer hidden">
+                            <div class="w-5 h-5 rounded-full border-2 border-slate-300 peer-checked:border-indigo-600 peer-checked:bg-indigo-600 mr-3 flex items-center justify-center">
+                                <div class="w-2 h-2 rounded-full bg-white opacity-0 peer-checked:opacity-100"></div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-semibold">LinkAja</div>
+                            </div>
+                            <div class="absolute inset-0 border-2 border-transparent peer-checked:border-indigo-600 rounded-xl pointer-events-none"></div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- VA -->
+                <div class="md:col-span-2 mt-2">
+                    <div class="text-sm font-semibold text-slate-500 mb-2 uppercase tracking-wider">Virtual Account</div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <label class="flex items-center p-4 border rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition relative overflow-hidden group">
+                            <input type="radio" name="paymentMethod" value="va_bca" class="peer hidden">
+                            <div class="w-5 h-5 rounded-full border-2 border-slate-300 peer-checked:border-indigo-600 peer-checked:bg-indigo-600 mr-3 flex items-center justify-center">
+                                <div class="w-2 h-2 rounded-full bg-white opacity-0 peer-checked:opacity-100"></div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-semibold">BCA</div>
+                            </div>
+                            <div class="absolute inset-0 border-2 border-transparent peer-checked:border-indigo-600 rounded-xl pointer-events-none"></div>
+                        </label>
+                        <label class="flex items-center p-4 border rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition relative overflow-hidden group">
+                            <input type="radio" name="paymentMethod" value="va_mandiri" class="peer hidden">
+                            <div class="w-5 h-5 rounded-full border-2 border-slate-300 peer-checked:border-indigo-600 peer-checked:bg-indigo-600 mr-3 flex items-center justify-center">
+                                <div class="w-2 h-2 rounded-full bg-white opacity-0 peer-checked:opacity-100"></div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-semibold">Mandiri</div>
+                            </div>
+                            <div class="absolute inset-0 border-2 border-transparent peer-checked:border-indigo-600 rounded-xl pointer-events-none"></div>
+                        </label>
+                        <label class="flex items-center p-4 border rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition relative overflow-hidden group">
+                            <input type="radio" name="paymentMethod" value="va_bni" class="peer hidden">
+                            <div class="w-5 h-5 rounded-full border-2 border-slate-300 peer-checked:border-indigo-600 peer-checked:bg-indigo-600 mr-3 flex items-center justify-center">
+                                <div class="w-2 h-2 rounded-full bg-white opacity-0 peer-checked:opacity-100"></div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-semibold">BNI</div>
+                            </div>
+                            <div class="absolute inset-0 border-2 border-transparent peer-checked:border-indigo-600 rounded-xl pointer-events-none"></div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Cash -->
+                <div class="md:col-span-2 mt-2">
+                    <div class="text-sm font-semibold text-slate-500 mb-2 uppercase tracking-wider">Bayar di Tempat</div>
+                    <label class="flex items-center p-4 border rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition relative overflow-hidden group">
+                        <input type="radio" name="paymentMethod" value="cash" class="peer hidden">
+                        <div class="w-5 h-5 rounded-full border-2 border-slate-300 peer-checked:border-indigo-600 peer-checked:bg-indigo-600 mr-4 flex items-center justify-center">
+                            <div class="w-2 h-2 rounded-full bg-white opacity-0 peer-checked:opacity-100"></div>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-semibold">Cash / Tunai</div>
+                            <div class="text-xs text-slate-500">Bayar di loket kasir saat kedatangan</div>
+                        </div>
+                        <div class="absolute inset-0 border-2 border-transparent peer-checked:border-indigo-600 rounded-xl pointer-events-none"></div>
+                    </label>
+                </div>
+
+                <!-- CC -->
+                <div class="md:col-span-2 mt-2">
+                    <div class="text-sm font-semibold text-slate-500 mb-2 uppercase tracking-wider">Lainnya</div>
+                    <label class="flex items-center p-4 border rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition relative overflow-hidden group">
+                        <input type="radio" name="paymentMethod" value="card" class="peer hidden">
+                        <div class="w-5 h-5 rounded-full border-2 border-slate-300 peer-checked:border-indigo-600 peer-checked:bg-indigo-600 mr-4 flex items-center justify-center">
+                            <div class="w-2 h-2 rounded-full bg-white opacity-0 peer-checked:opacity-100"></div>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-semibold">Kartu Kredit / Debit</div>
+                            <div class="text-xs text-slate-500">Visa, Mastercard, JCB</div>
+                        </div>
+                        <div class="absolute inset-0 border-2 border-transparent peer-checked:border-indigo-600 rounded-xl pointer-events-none"></div>
+                    </label>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 3. Ringkasan & Promo (Sekarang di Bawah) -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-lg">
+            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs">3</span>
+                Ringkasan Pesanan
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Detail Item -->
+                <div class="space-y-4 text-sm">
+                    <div class="flex justify-between pb-2 border-b border-dashed border-slate-200 dark:border-slate-700">
+                        <span class="text-slate-500">Tanggal Kunjungan</span>
+                        <span class="font-medium">{{ summary.date }}</span>
+                    </div>
+                    <div class="flex justify-between pb-2 border-b border-dashed border-slate-200 dark:border-slate-700">
+                        <span class="text-slate-500">Tipe Kunjungan</span>
+                        <span class="font-medium capitalize">{{ summary.type }}</span>
+                    </div>
+
+                    {% if summary.group_details %}
+                    <div class="flex justify-between pb-2 border-b border-dashed border-slate-200 dark:border-slate-700">
+                        <span class="text-slate-500">Info Group</span>
+                        <div class="text-right">
+                            <div class="font-medium">{{ summary.group_details.name }}</div>
+                            <div class="text-xs text-slate-500">{{ summary.group_details.size }} Orang</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div>
+                        <span class="text-slate-500 block mb-1">Tiket</span>
+                        {% for item in summary.order_items %}
+                        <div class="flex justify-between text-slate-700 dark:text-slate-300 pl-2 border-l-2 border-slate-100 dark:border-slate-700 mb-1">
+                            <span>{{ item.name }} x{{ item.qty }}</span>
+                            <span>Rp {{ "{:,}".format(item.subtotal) }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    {% if summary.addons %}
+                    <div>
+                        <span class="text-slate-500 block mb-1">Tambahan</span>
+                        {% for addon in summary.addons %}
+                        <div class="flex justify-between text-slate-700 dark:text-slate-300 pl-2 border-l-2 border-slate-100 dark:border-slate-700 mb-1">
+                            <span>{{ addon.name }}</span>
+                            <span>Rp {{ "{:,}".format(addon.price) }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Promo & Total -->
+                <div class="flex flex-col justify-between">
+                    <!-- Promo Code Input -->
+                    <div class="mb-6 bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <label class="block text-sm font-medium mb-2">Kode Promo</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="promoCodeInput" class="w-1/2 p-2 border rounded-lg uppercase placeholder:capitalize" placeholder="KODE PROMO">
+                            <button onclick="checkPromo()" id="applyPromoBtn" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-300 font-medium text-sm transition-colors">Terapkan</button>
+                        </div>
+                        <div id="promoMessage" class="text-xs mt-2 hidden"></div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-slate-500">Subtotal</span>
+                            <span class="font-medium">Rp {{ "{:,}".format(summary.total) }}</span>
+                        </div>
+                        <div id="discountRow" class="flex justify-between items-center mb-2 text-green-600 hidden">
+                            <span class="flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                                Diskon <span id="promoCodeDisplay" class="font-bold"></span>
+                            </span>
+                            <span class="font-bold">-Rp <span id="discountAmountDisplay">0</span></span>
+                        </div>
+                        <div class="flex justify-between items-center pt-4 border-t border-slate-200 dark:border-slate-700">
+                            <span class="font-bold text-lg">Total Bayar</span>
+                            <span class="font-bold text-2xl text-indigo-600">Rp <span id="finalTotalDisplay">{{ "{:,}".format(summary.total) }}</span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Persetujuan -->
+            <div class="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
+                <label class="flex items-start cursor-pointer mb-6">
+                    <input type="checkbox" id="agreementCheck" class="mt-1 w-5 h-5 rounded text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                    <div class="ml-3 text-sm text-slate-600 dark:text-slate-300">
+                        Saya menyetujui <a href="#" class="text-indigo-600 hover:underline">Syarat & Ketentuan</a> serta <a href="#" class="text-indigo-600 hover:underline">Kebijakan Privasi</a> yang berlaku. Pastikan data yang Anda isi sudah benar.
+                    </div>
+                </label>
+
+                <button id="payButton" onclick="processPayment()" disabled class="w-full py-4 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-lg shadow-lg shadow-indigo-200 dark:shadow-none">
+                    Bayar Sekarang
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // --- CITIES DATA ---
+    const cityData = {{ cities | tojson }};
+    const dataList = document.getElementById('cityList');
+    
+    // Optimize rendering for large lists
+    const fragment = document.createDocumentFragment();
+    cityData.forEach(city => {
+        const option = document.createElement('option');
+        option.value = city;
+        fragment.appendChild(option);
+    });
+    dataList.appendChild(fragment);
+
+    // --- FORM VALIDATION ---
+    const checkAgreement = document.getElementById('agreementCheck');
+    const payButton = document.getElementById('payButton');
+    
+    function validateForm() {
+        const name = document.getElementById('customerName').value.trim();
+        const email = document.getElementById('customerEmail').value.trim();
+        const phone = document.getElementById('customerPhone').value.trim();
+        const domicile = document.getElementById('customerDomicile').value.trim();
+        const agreed = checkAgreement.checked;
+
+        if(name && email && phone && domicile && agreed) {
+            payButton.disabled = false;
+        } else {
+            payButton.disabled = true;
+        }
+    }
+
+    ['customerName', 'customerEmail', 'customerPhone', 'customerDomicile'].forEach(id => {
+        document.getElementById(id).addEventListener('input', validateForm);
+    });
+    checkAgreement.addEventListener('change', validateForm);
+
+    // --- PROMO CODE LOGIC ---
+    let currentDiscount = 0;
+    let appliedPromoCode = null;
+    const baseTotal = {{ summary.total }};
+
+    async function checkPromo() {
+        const codeInput = document.getElementById('promoCodeInput');
+        const btn = document.getElementById('applyPromoBtn');
+        const msg = document.getElementById('promoMessage');
+        const code = codeInput.value.trim();
+        
+        if(!code) return;
+        
+        btn.innerHTML = '...';
+        btn.disabled = true;
+        
+        try {
+            const res = await fetch('/api/check-promo', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ code: code, total: baseTotal })
+            });
+            const data = await res.json();
+            
+            if(data.status === 'success') {
+                currentDiscount = data.discount_amount;
+                appliedPromoCode = data.code;
+                
+                // Update UI
+                document.getElementById('discountRow').classList.remove('hidden');
+                document.getElementById('promoCodeDisplay').textContent = data.code;
+                document.getElementById('discountAmountDisplay').textContent = data.discount_amount.toLocaleString();
+                document.getElementById('finalTotalDisplay').textContent = data.final_total.toLocaleString();
+                
+                msg.textContent = 'Kode promo berhasil digunakan!';
+                msg.className = 'text-xs mt-2 text-green-600 font-medium';
+                msg.classList.remove('hidden');
+                
+                // Disable input to prevent changes (optional, or allow change)
+                // codeInput.disabled = true;
+                btn.textContent = 'Terpasang';
+            } else {
+                msg.textContent = data.message;
+                msg.className = 'text-xs mt-2 text-red-500 font-medium';
+                msg.classList.remove('hidden');
+                
+                // Reset
+                currentDiscount = 0;
+                appliedPromoCode = null;
+                document.getElementById('discountRow').classList.add('hidden');
+                document.getElementById('finalTotalDisplay').textContent = baseTotal.toLocaleString();
+                btn.textContent = 'Terapkan';
+            }
+        } catch(e) {
+            console.error(e);
+            msg.textContent = 'Gagal mengecek kode promo';
+            msg.className = 'text-xs mt-2 text-red-500 font-medium';
+            msg.classList.remove('hidden');
+            btn.textContent = 'Terapkan';
+        }
+        btn.disabled = false;
+    }
+
+    // --- PROCESS PAYMENT ---
+    async function processPayment() {
+        payButton.innerHTML = `<svg class="animate-spin h-5 w-5 text-white inline-block mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Memproses...`;
+        payButton.disabled = true;
+
+        const payload = {
+            customer: {
+                name: document.getElementById('customerName').value,
+                email: document.getElementById('customerEmail').value,
+                phone: document.getElementById('customerPhone').value,
+                domicile: document.getElementById('customerDomicile').value
+            },
+            payment_method: document.querySelector('input[name="paymentMethod"]:checked').value,
+            promo_code: appliedPromoCode,
+            discount_amount: currentDiscount
+        };
+
+        try {
+            const res = await fetch('/api/process-payment', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            
+            if(data.status === 'success') {
+                window.location.href = `/payment/${data.order_uuid}`;
+            } else {
+                alert('Gagal: ' + data.message);
+                payButton.innerHTML = 'Bayar Sekarang';
+                payButton.disabled = false;
+            }
+        } catch(e) {
+            console.error(e);
+            alert('Terjadi kesalahan koneksi');
+            payButton.innerHTML = 'Bayar Sekarang';
+            payButton.disabled = false;
+        }
+    }
+</script>
+{% endblock %}

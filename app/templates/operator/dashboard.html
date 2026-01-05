@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Operator Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { darkMode: 'class' }
+    if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+    }
+  </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+      .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+      @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-white dark:bg-slate-800 shadow-sm border-b border-slate-200 dark:border-slate-700 py-4 px-6 flex justify-between items-center sticky top-0 z-50">
+      <div class="flex items-center gap-3">
+          <span class="font-bold text-xl tracking-wide text-blue-600 dark:text-blue-400">Operator Dashboard</span>
+      </div>
+      <div class="flex items-center gap-4">
+          <span class="text-sm font-medium text-slate-500 dark:text-slate-400">Halo, {{ session.get('user_name') }}</span>
+          <a href="{{ url_for('main.logout') }}" class="px-4 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium">Logout</a>
+      </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 container mx-auto px-4 py-8 max-w-4xl">
+      
+      <!-- Mode Selection -->
+      <div class="mb-8 grid grid-cols-2 gap-4">
+          {% if site.allow_wristband %}
+          <button onclick="setMode('wristband')" id="btn-wristband" class="p-4 rounded-xl border-2 text-center transition-all duration-200 hover:shadow-md">
+              <div class="text-3xl mb-2">🎟️</div>
+              <div class="font-bold text-lg">Tukar Gelang</div>
+              <div class="text-xs text-slate-500">Scan untuk penukaran tiket fisik</div>
+          </button>
+          {% endif %}
+          
+          {% if site.allow_gate %}
+          <button onclick="setMode('gate')" id="btn-gate" class="p-4 rounded-xl border-2 text-center transition-all duration-200 hover:shadow-md">
+              <div class="text-3xl mb-2">🚪</div>
+              <div class="font-bold text-lg">Gate Check-in</div>
+              <div class="text-xs text-slate-500">Scan untuk masuk gate</div>
+          </button>
+          {% endif %}
+      </div>
+
+      <!-- Gate Selection (Only for Gate Mode) -->
+      <div id="gate-selector" class="mb-8 hidden animate-fade-in">
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Lokasi Gate</label>
+          <div class="relative">
+              <select id="gate-select" onchange="saveGate()" class="w-full p-4 rounded-xl border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-lg font-bold appearance-none cursor-pointer focus:border-blue-500 outline-none">
+                  {% for gate in gates %}
+                  <option value="{{ gate.name }}">{{ gate.name }}</option>
+                  {% else %}
+                  <option value="Gate Utama">Gate Utama</option>
+                  {% endfor %}
+              </select>
+              <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500"><path d="m6 9 6 6 6-6"/></svg>
+              </div>
+          </div>
+      </div>
+
+      <!-- Scanner Input -->
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-8 mb-8">
+          <div class="text-center mb-6">
+              <h2 class="text-2xl font-bold mb-2" id="scan-title">Siap Scan</h2>
+              <p class="text-slate-500 dark:text-slate-400">Arahkan scanner ke QR Code atau ketik kode tiket (UUID/Invoice) manual.</p>
+          </div>
+          
+          <div class="relative max-w-lg mx-auto">
+              <input type="text" id="scan-input" placeholder="Scan QR atau ketik No Invoice/UUID..." 
+                  class="w-full px-6 py-4 text-xl text-center font-mono tracking-wider border-2 border-slate-300 dark:border-slate-600 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 outline-none transition-all bg-slate-50 dark:bg-slate-900"
+                  autocomplete="off" autofocus>
+              <div class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path></svg>
+              </div>
+          </div>
+          
+          <div class="text-center mt-4">
+               <button onclick="checkTicket()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors">Proses Manual</button>
+          </div>
+      </div>
+
+      <!-- Result Area -->
+      <div id="result-area" class="hidden">
+          <!-- Populated by JS -->
+      </div>
+      
+      <!-- History Log -->
+      <div class="mt-12">
+          <h3 class="font-bold text-lg mb-4 px-2 border-l-4 border-slate-400">Riwayat Scan Sesi Ini</h3>
+          <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+              <table class="w-full text-left text-sm">
+                  <thead class="bg-slate-50 dark:bg-slate-700/50 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-200 dark:border-slate-700">
+                      <tr>
+                          <th class="px-6 py-3">Waktu</th>
+                          <th class="px-6 py-3">Kode Tiket</th>
+                          <th class="px-6 py-3">Tipe</th>
+                          <th class="px-6 py-3">Status</th>
+                      </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-200 dark:divide-slate-700" id="history-body">
+                      <!-- Rows -->
+                  </tbody>
+              </table>
+              <div id="empty-history" class="p-8 text-center text-slate-500 italic">Belum ada data scan</div>
+          </div>
+      </div>
+
+  </main>
+
+  <script>
+    const allowWristband = {{ 'true' if site.allow_wristband else 'false' }};
+    const allowGate = {{ 'true' if site.allow_gate else 'false' }};
+    
+    let savedMode = localStorage.getItem('operator_mode');
+    let currentMode = savedMode;
+    
+    // Check validity of saved mode against allowed settings
+    if (currentMode === 'wristband' && !allowWristband) currentMode = null;
+    if (currentMode === 'gate' && !allowGate) currentMode = null;
+    
+    // Fallback if null or invalid
+    if (!currentMode) {
+        if (allowWristband) currentMode = 'wristband';
+        else if (allowGate) currentMode = 'gate';
+    }
+
+    const input = document.getElementById('scan-input');
+    
+    // Initialize Gate Selection
+    const gateSelect = document.getElementById('gate-select');
+    const savedGate = localStorage.getItem('operator_gate');
+    if (savedGate && gateSelect) {
+        // Check if saved gate exists in options
+        const option = Array.from(gateSelect.options).find(o => o.value === savedGate);
+        if (option) gateSelect.value = savedGate;
+    }
+    
+    function saveGate() {
+        if(gateSelect) localStorage.setItem('operator_gate', gateSelect.value);
+    }
+    
+    function setMode(mode) {
+        currentMode = mode;
+        localStorage.setItem('operator_mode', mode);
+        updateUI();
+        input.focus();
+    }
+    
+    function updateUI() {
+        const btnWristband = document.getElementById('btn-wristband');
+        const btnGate = document.getElementById('btn-gate');
+        const title = document.getElementById('scan-title');
+        const gateSelector = document.getElementById('gate-selector');
+        
+        // Reset classes
+        if (btnWristband) btnWristband.className = "p-4 rounded-xl border-2 text-center transition-all duration-200 hover:shadow-md cursor-pointer";
+        if (btnGate) btnGate.className = "p-4 rounded-xl border-2 text-center transition-all duration-200 hover:shadow-md cursor-pointer";
+        
+        // Active styles
+        const activeClass = "border-blue-500 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-slate-900";
+        const inactiveClass = "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 opacity-70 hover:opacity-100";
+        
+        if (currentMode === 'wristband') {
+            if (btnWristband) btnWristband.className += " " + activeClass;
+            if (btnGate) btnGate.className += " " + inactiveClass;
+            title.textContent = "Mode: Tukar Gelang";
+            title.className = "text-2xl font-bold mb-2 text-purple-600 dark:text-purple-400";
+            if (gateSelector) gateSelector.classList.add('hidden');
+        } else if (currentMode === 'gate') {
+            if (btnGate) btnGate.className += " " + activeClass;
+            if (btnWristband) btnWristband.className += " " + inactiveClass;
+            title.textContent = "Mode: Gate Check-in";
+            title.className = "text-2xl font-bold mb-2 text-blue-600 dark:text-blue-400";
+            if (gateSelector) gateSelector.classList.remove('hidden');
+        }
+    }
+    
+    // Auto submit on Enter
+    input.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            checkTicket();
+        }
+    });
+    
+    // Auto focus loop
+    document.addEventListener('click', function(e) {
+        // Only focus if not clicking a button or link
+        if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'A' && !e.target.closest('button') && !e.target.closest('a')) {
+             if(!document.getElementById('confirmBtn')) {
+                 input.focus();
+             }
+        }
+    });
+    
+    let currentTicketCode = '';
+
+    async function checkTicket() {
+        const code = input.value.trim();
+        if (!code) return;
+        
+        currentTicketCode = code;
+        input.disabled = true;
+        
+        try {
+            const response = await fetch('/api/operator/scan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    uuid: code,
+                    type: currentMode,
+                    action: 'check'
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                showConfirmation(result, code);
+            } else {
+                showResult({ status: 'error', message: result.message }, code);
+                resetInput();
+            }
+            
+        } catch (error) {
+            showResult({ status: 'error', message: 'Network Error: ' + error.message }, code);
+            resetInput();
+        }
+    }
+    
+    function showConfirmation(data, code) {
+        const area = document.getElementById('result-area');
+        area.className = "rounded-2xl shadow-lg border p-6 mb-8 animate-fade-in bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700";
+        area.classList.remove('hidden');
+        
+        const order = data.order;
+        const checks = data.checks;
+        
+        // Validation Flags
+        const isPaid = checks.is_paid;
+        const isToday = checks.is_today;
+        const alreadyScanned = checks.already_scanned;
+        
+        let warnings = [];
+        if (!isPaid) warnings.push({ type: 'error', msg: 'BELUM LUNAS' });
+        if (!isToday) warnings.push({ type: 'warning', msg: 'TANGGAL KUNJUNGAN TIDAK SESUAI' });
+        if (alreadyScanned) warnings.push({ type: 'error', msg: `SUDAH DIPAKAI JAM ${checks.scan_time}` });
+        
+        const canProcess = isPaid && !alreadyScanned; // Allow date mismatch? Maybe warn only. Strict: isPaid && isToday && !alreadyScanned
+        // Let's assume strict for now based on user request "kondisi tidak sesuai"
+        // But maybe user wants to override? "muncul info dulu".
+        // I will disable button if NOT PAID or ALREADY SCANNED. Date mismatch is usually a warning that can be overridden by manual policy.
+        // Let's make "Process" button visible but styled differently if warnings.
+        
+        const processDisabled = !isPaid || alreadyScanned;
+        
+        let warningHtml = '';
+        if (warnings.length > 0) {
+            warningHtml = warnings.map(w => 
+                `<div class="p-3 rounded-lg font-bold text-center mb-2 ${w.type === 'error' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'}">${w.msg}</div>`
+            ).join('');
+        }
+        
+        let html = `
+            <div class="text-center mb-6">
+                <div class="text-sm text-slate-500 uppercase tracking-wider mb-1">Tiket Ditemukan</div>
+                <h3 class="text-2xl font-bold text-slate-800 dark:text-slate-100">${order.customer_name}</h3>
+                <p class="text-slate-500">${order.uuid}</p>
+            </div>
+            
+            ${warningHtml}
+            
+            <div class="grid grid-cols-2 gap-4 text-sm mb-6 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl">
+                <div>
+                    <span class="block text-slate-500">Jumlah Pax</span>
+                    <span class="font-bold text-lg">${order.total_pax} Orang</span>
+                </div>
+                <div>
+                    <span class="block text-slate-500">Tipe Tiket</span>
+                    <span class="font-bold uppercase">${order.visit_type}</span>
+                </div>
+                <div>
+                    <span class="block text-slate-500">Tanggal Kunjungan</span>
+                    <span class="font-bold ${!isToday ? 'text-orange-600' : ''}">${order.visit_date}</span>
+                </div>
+                <div>
+                    <span class="block text-slate-500">Status Bayar</span>
+                    <span class="font-bold uppercase ${!isPaid ? 'text-red-600' : 'text-green-600'}">${data.payment_status}</span>
+                </div>
+            </div>
+            
+            <div class="flex gap-3">
+                <button onclick="cancelCheck()" class="flex-1 py-3 rounded-xl border border-slate-300 dark:border-slate-600 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                    Batal
+                </button>
+                <button id="confirmBtn" onclick="executeProcess()" ${processDisabled ? 'disabled' : ''} 
+                    class="flex-1 py-3 rounded-xl font-bold text-white transition-all shadow-lg
+                    ${processDisabled ? 'bg-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 hover:scale-[1.02]'}">
+                    ${currentMode === 'wristband' ? 'TUKAR GELANG' : 'CHECK-IN GATE'}
+                </button>
+            </div>
+        `;
+        
+        area.innerHTML = html;
+        
+        // Focus confirm button if possible
+        if(!processDisabled) {
+             setTimeout(() => document.getElementById('confirmBtn').focus(), 100);
+        }
+    }
+    
+    async function executeProcess() {
+        const btn = document.getElementById('confirmBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="animate-pulse">Memproses...</span>';
+        
+        const gateName = document.getElementById('gate-select').value;
+        
+        try {
+            const response = await fetch('/api/operator/scan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    uuid: currentTicketCode,
+                    type: currentMode,
+                    action: 'execute',
+                    gate_name: gateName
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                showResult(result, currentTicketCode);
+                addToHistory(currentTicketCode, currentMode, result);
+            } else {
+                showResult({ status: 'error', message: result.message }, currentTicketCode);
+            }
+            
+        } catch (error) {
+             showResult({ status: 'error', message: 'Network Error' }, currentTicketCode);
+        }
+        
+        resetInput();
+    }
+    
+    function cancelCheck() {
+        document.getElementById('result-area').classList.add('hidden');
+        resetInput();
+    }
+    
+    function resetInput() {
+        input.value = '';
+        input.disabled = false;
+        input.focus();
+    }
+    
+    // --- Existing Functions ---
+
+    // async function processInput() ... REPLACED BY checkTicket and executeProcess
+
+    function showResult(result, code) {
+        const area = document.getElementById('result-area');
+        area.className = "rounded-2xl shadow-lg border p-6 mb-8 animate-fade-in " + 
+            (result.status === 'success' ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800' : 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800');
+        
+        area.classList.remove('hidden');
+        
+        let html = '';
+        if (result.status === 'success') {
+            html = `
+                <div class="flex items-start gap-4">
+                    <div class="bg-green-100 text-green-600 p-3 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-xl font-bold text-green-800 dark:text-green-300 mb-1">${result.message}</h3>
+                        ${result.warning ? `<p class="text-orange-600 font-bold bg-orange-100 p-2 rounded mb-2">⚠️ ${result.warning}</p>` : ''}
+                        
+                        <div class="grid grid-cols-2 gap-x-8 gap-y-2 mt-4 text-sm">
+                            <div>
+                                <span class="text-slate-500 block">Nama Pengunjung</span>
+                                <span class="font-bold text-lg">${result.order.customer_name}</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-500 block">Jumlah Pax</span>
+                                <span class="font-bold text-lg">${result.order.total_pax} Orang</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-500 block">Tanggal Kunjungan</span>
+                                <span class="font-medium">${result.order.visit_date}</span>
+                            </div>
+                             <div>
+                                <span class="text-slate-500 block">Tipe Tiket</span>
+                                <span class="font-medium uppercase">${result.order.visit_type}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Play success sound if possible
+            playAudio('success');
+        } else {
+            html = `
+                <div class="flex items-start gap-4">
+                    <div class="bg-red-100 text-red-600 p-3 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-xl font-bold text-red-800 dark:text-red-300 mb-1">Gagal Scan</h3>
+                        <p class="text-red-600 dark:text-red-400 font-medium text-lg">${result.message}</p>
+                        ${result.order ? `
+                            <div class="mt-3 pt-3 border-t border-red-200 dark:border-red-800 text-sm opacity-75">
+                                <p>Tiket milik: <b>${result.order.customer_name}</b> (${result.order.visit_date})</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            playAudio('error');
+        }
+        
+        area.innerHTML = html;
+    }
+    
+    function addToHistory(code, mode, result) {
+        document.getElementById('empty-history').classList.add('hidden');
+        const tbody = document.getElementById('history-body');
+        
+        const row = document.createElement('tr');
+        row.className = "hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors";
+        
+        const time = new Date().toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+        const statusColor = result.status === 'success' ? 'text-green-600' : 'text-red-600';
+        const statusText = result.status === 'success' ? 'Berhasil' : 'Gagal';
+        
+        row.innerHTML = `
+            <td class="px-6 py-4 whitespace-nowrap text-slate-500">${time}</td>
+            <td class="px-6 py-4 font-mono font-bold">${code}</td>
+            <td class="px-6 py-4 capitalize">${mode === 'wristband' ? 'Tukar Gelang' : 'Gate Check-in'}</td>
+            <td class="px-6 py-4 font-bold ${statusColor}">${statusText}</td>
+        `;
+        
+        tbody.insertBefore(row, tbody.firstChild);
+        
+        // Limit history to 10
+        if (tbody.children.length > 10) {
+            tbody.removeChild(tbody.lastChild);
+        }
+    }
+    
+    function playAudio(type) {
+        // Simple beep implementation or use Audio object if assets exist
+        // For now, no sound, or maybe just console log
+        console.log("Audio: " + type);
+    }
+
+    // Init
+    updateUI();
+    input.focus();
+  </script>
+</body>
+</html>

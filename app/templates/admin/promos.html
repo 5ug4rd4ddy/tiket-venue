@@ -1,0 +1,100 @@
+{% extends "admin_base.html" %}
+{% block title %}Kelola Promo Code{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex justify-between items-center">
+    <div>
+        <h1 class="text-2xl font-bold">Promo Code</h1>
+        <p class="text-slate-500">Kelola kode diskon untuk pelanggan.</p>
+    </div>
+    <button onclick="document.getElementById('addModal').classList.remove('hidden')" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Tambah Promo
+    </button>
+</div>
+
+<div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+    <table class="w-full text-left text-sm">
+        <thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+            <tr>
+                <th class="px-6 py-4 font-semibold">Kode Promo</th>
+                <th class="px-6 py-4 font-semibold">Tipe Diskon</th>
+                <th class="px-6 py-4 font-semibold">Nilai</th>
+                <th class="px-6 py-4 font-semibold">Status</th>
+                <th class="px-6 py-4 font-semibold">Dibuat</th>
+                <th class="px-6 py-4 font-semibold text-right">Aksi</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+            {% for promo in promos %}
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
+                <td class="px-6 py-4 font-mono font-bold text-indigo-600">{{ promo.code }}</td>
+                <td class="px-6 py-4 capitalize">{{ promo.discount_type }}</td>
+                <td class="px-6 py-4">
+                    {% if promo.discount_type == 'fixed' %}
+                    Rp {{ "{:,}".format(promo.discount_value) }}
+                    {% else %}
+                    {{ promo.discount_value }}%
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4">
+                    <span class="px-2 py-1 rounded-full text-xs font-medium 
+                        {% if promo.is_active %} bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300
+                        {% else %} bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400 {% endif %}">
+                        {{ 'Aktif' if promo.is_active else 'Nonaktif' }}
+                    </span>
+                </td>
+                <td class="px-6 py-4 text-slate-500">{{ promo.created_at.strftime('%d %b %Y') }}</td>
+                <td class="px-6 py-4 text-right">
+                    <form action="{{ url_for('main.delete_promo', id=promo.id) }}" method="POST" class="inline" onsubmit="return confirm('Hapus promo ini?')">
+                        <button type="submit" class="text-red-600 hover:text-red-800 dark:hover:text-red-400">Hapus</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="px-6 py-12 text-center text-slate-400">
+                    Belum ada promo code.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Add Modal -->
+<div id="addModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-xl w-full max-w-md shadow-2xl">
+        <h2 class="text-xl font-bold mb-4">Tambah Promo Code</h2>
+        <form action="{{ url_for('main.add_promo') }}" method="POST">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Kode Promo</label>
+                    <input type="text" name="code" required class="w-full p-2 border rounded-lg bg-transparent dark:border-slate-600 uppercase" placeholder="CONTOH: HEMAT10">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Tipe</label>
+                        <select name="discount_type" class="w-full p-2 border rounded-lg bg-transparent dark:border-slate-600 dark:bg-slate-800">
+                            <option value="fixed">Nominal (Rp)</option>
+                            <option value="percent">Persen (%)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Nilai</label>
+                        <input type="number" name="discount_value" required min="1" class="w-full p-2 border rounded-lg bg-transparent dark:border-slate-600">
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" name="is_active" id="activeCheck" checked class="w-4 h-4 rounded text-indigo-600">
+                    <label for="activeCheck" class="text-sm">Aktifkan Segera</label>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+                <button type="button" onclick="document.getElementById('addModal').classList.add('hidden')" class="px-4 py-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">Batal</button>
+                <button type="submit" class="px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

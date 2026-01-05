@@ -1,0 +1,27 @@
+header { backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+:root { color-scheme: light dark; }
+
+/* visit type animation */
+.visit-type { transition: transform .28s cubic-bezier(.2,.9,.3,1), box-shadow .28s, border-color .2s; }
+.visit-type.selected {  box-shadow: 0 10px 30px rgba(2,6,23,0.12); border-color: rgba(79,70,229,1); }
+
+/* quantity circle smaller */
+.qty-circle{ display:inline-flex; align-items:center; justify-content:center; width:33px; height:33px; border-radius:9999px; border:1px solid rgba(79,70,229,1); background:transparent }
+.qty-icon { width:14px; height:14px }
+
+/* addon card selected */
+.addon-card { transition: transform .18s, box-shadow .18s, border-color .18s; }
+.addon-card[data-selected="true"] { box-shadow: 0 8px 24px rgba(2,6,23,0.08); border-color: rgba(79,70,229,1); }
+
+/* mobile safe area for CTA */
+.safe-bottom { padding-bottom: calc(env(safe-area-inset-bottom) + 8px); }
+
+/* unified border color for selects and inputs (inactive by default) */
+.inactive-border { border-color: #e6e9ee; }
+.active-border { border-color: rgba(79,70,229,1); }
+
+/* slightly larger labels */
+.label-lg { font-size: 0.95rem; }
+
+/* header color distinct from body on light mode */
+.header-light { background-color: #f8fafc; } /* slightly off-white */

@@ -1,0 +1,14 @@
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+.env
+.pytest_cache/
+*.db
+*.sqlite3
+prd.md
+tests/
+
+# Ignore uploads content but keep directory (if needed, otherwise just ignore folder)
+app/static/uploads/*
+!app/static/uploads/.gitkeep

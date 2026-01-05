@@ -1,0 +1,56 @@
+{% extends "email/base_email.html" %}
+
+{% block title %}Invoice #{{ order.invoice_number }}{% endblock %}
+
+{% block content %}
+    <h2>Halo {{ order.customer_name }},</h2>
+    <p>Terima kasih atas pesanan Anda. Berikut adalah detail tagihan Anda:</p>
+    
+    <table class="info-table">
+        <tr>
+            <th>No. Invoice</th>
+            <td>{{ order.invoice_number }}</td>
+        </tr>
+        <tr>
+            <th>Tanggal Kunjungan</th>
+            <td>{{ order.visit_date | date_with_day }}</td>
+        </tr>
+        <tr>
+            <th>Total Tagihan</th>
+            <td style="font-size: 18px; color: #2563eb;">Rp {{ "{:,.0f}".format(order.total_price).replace(',', '.') }}</td>
+        </tr>
+        <tr>
+            <th>Status Pembayaran</th>
+            <td>
+                {% if order.payment_status == 'paid' %}
+                    <span style="color: #10b981; font-weight: bold;">LUNAS</span>
+                {% elif order.payment_status == 'pending' %}
+                    <span style="color: #f59e0b; font-weight: bold;">MENUNGGU PEMBAYARAN</span>
+                {% else %}
+                    <span style="color: #ef4444; font-weight: bold;">GAGAL</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% if order.payment_status == 'pending' and order.expires_at %}
+        <tr>
+            <th>Batas Waktu Pembayaran</th>
+            <td style="color: #ef4444; font-weight: bold;">
+                {{ order.expires_at | wib_format }}
+            </td>
+        </tr>
+        {% endif %}
+    </table>
+
+    {% if order.payment_status == 'pending' %}
+        <p>Silakan selesaikan pembayaran Anda melalui tautan di bawah ini:</p>
+        <div style="text-align: center; color: #fff;">
+            <a href="{{ url_for('main.payment_page', uuid=order.uuid, _external=True) }}" class="btn" style="color: #fff;">Bayar Sekarang</a>
+        </div>
+        <p style="font-size: 14px; color: #64748b; margin-top: 20px; text-align: center;">Atau salin tautan berikut: <br>{{ url_for('main.payment_page', uuid=order.uuid, _external=True) }}</p>
+    {% else %}
+        <p>Pembayaran Anda telah kami terima. E-Ticket telah dikirimkan ke email Anda.</p>
+        <div style="text-align: center;">
+            <a href="{{ url_for('main.payment_page', uuid=order.uuid, _external=True) }}" class="btn">Lihat Detail Pesanan</a>
+        </div>
+    {% endif %}
+{% endblock %}

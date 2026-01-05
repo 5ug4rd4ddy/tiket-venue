@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="id" class="scroll-smooth">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{% block title %}{{ site.park_name }}{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="min-h-screen bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 transition-colors duration-300">
+  
+  <header class="fixed top-4 left-1/2 -translate-x-1/2 w-[95%] max-w-3xl z-50 rounded-2xl shadow-lg p-4 flex items-center justify-between gap-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md">
+    <div class="flex items-center gap-4">
+      <a href="{{ url_for('main.index') }}">
+        {% if site.logo_url %}
+            {% if site.logo_url.startswith('http') %}
+            <img src="{{ site.logo_url }}" alt="logo" class="w-11 h-11 rounded-lg object-cover"/>
+            {% else %}
+            <img src="{{ url_for('static', filename='uploads/' + site.logo_url) }}" alt="logo" class="w-11 h-11 rounded-lg object-cover"/>
+            {% endif %}
+        {% else %}
+        <div class="w-11 h-11 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-lg">W</div>
+        {% endif %}
+      </a>
+      <!-- <div>
+        <div class="text-lg font-semibold">{{ site.park_name }}</div>
+        <div class="text-sm text-slate-500 dark:text-slate-400">{{ site.park_info }}</div>
+      </div> -->
+    </div>
+    
+    <div class="flex items-center gap-3">
+        <button id="themeToggle" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400">
+            <!-- Sun Icon (Show in Dark Mode) -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden dark:block"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            <!-- Moon Icon (Show in Light Mode) -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="block dark:hidden"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+        {% if session.get('logged_in') %}
+         <a href="{{ url_for('main.dashboard') }}" class="text-sm font-bold text-indigo-600">Admin</a>
+        {% endif %}
+    </div>
+  </header>
+
+  <main class="pt-28 pb-16 flex justify-center">
+    {% block content %}{% endblock %}
+  </main>
+
+  <script>
+    // Dark mode logic global
+    const saved = localStorage.getItem('theme');
+    if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+    }
+    document.getElementById('themeToggle').addEventListener('click', ()=>{
+        const isDark = document.documentElement.classList.toggle('dark');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    });
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

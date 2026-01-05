@@ -1,0 +1,230 @@
+{% extends "admin_base.html" %}
+{% block title %}Kelola Tiket{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-6">
+    <div>
+        <h1 class="text-2xl font-bold">Manajemen Tiket</h1>
+        <p class="text-slate-500">Kelola daftar tiket yang tersedia untuk pengunjung.</p>
+    </div>
+    <button onclick="openModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Tambah Tiket
+    </button>
+</div>
+
+<div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+    <table class="w-full text-left text-sm">
+        <thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+            <tr>
+                <th class="px-6 py-4 font-semibold">Nama Tiket</th>
+                <th class="px-6 py-4 font-semibold">Kategori</th>
+                <th class="px-6 py-4 font-semibold">Harga Dewasa</th>
+                <th class="px-6 py-4 font-semibold">Harga Anak</th>
+                <th class="px-6 py-4 font-semibold">Status</th>
+                <th class="px-6 py-4 font-semibold">Deskripsi</th>
+                <th class="px-6 py-4 font-semibold text-right">Aksi</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+            {% for ticket in tickets %}
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-900/50">
+                <td class="px-6 py-4 font-medium">{{ ticket.name }}</td>
+                <td class="px-6 py-4">
+                    <span class="px-2 py-1 rounded-full text-xs font-medium uppercase tracking-wider
+                        {% if ticket.category == 'group' %} bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300
+                        {% else %} bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 {% endif %}">
+                        {{ ticket.category }}
+                    </span>
+                </td>
+                <td class="px-6 py-4 font-mono">Rp {{ "{:,}".format(ticket.price_adult) }}</td>
+                <td class="px-6 py-4 font-mono">Rp {{ "{:,}".format(ticket.price_child) }}</td>
+                <td class="px-6 py-4">
+                    <span class="px-2 py-1 rounded-full text-xs font-medium 
+                        {% if ticket.is_active %} bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300
+                        {% else %} bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 {% endif %}">
+                        {{ 'Aktif' if ticket.is_active else 'Nonaktif' }}
+                    </span>
+                </td>
+                <td class="px-6 py-4 text-slate-500">{{ ticket.description }}</td>
+                <td class="px-6 py-4 text-right flex justify-end gap-3">
+                    <button 
+                        onclick="editTicket(this)"
+                        data-id="{{ ticket.id }}"
+                        data-name="{{ ticket.name }}"
+                        data-category="{{ ticket.category }}"
+                        data-price-adult="{{ ticket.price_adult }}"
+                        data-price-child="{{ ticket.price_child }}"
+                        data-price-adult-weekend="{{ ticket.price_adult_weekend or '' }}"
+                        data-price-child-weekend="{{ ticket.price_child_weekend or '' }}"
+                        data-price-adult-highseason="{{ ticket.price_adult_highseason or '' }}"
+                        data-price-child-highseason="{{ ticket.price_child_highseason or '' }}"
+                        data-desc="{{ ticket.description }}"
+                        data-active="{{ 'true' if ticket.is_active else 'false' }}"
+                        class="text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        Edit
+                    </button>
+                    <form action="{{ url_for('main.delete_ticket', id=ticket.id) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus tiket ini?');">
+                        <button type="submit" class="text-red-500 hover:text-red-700 flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            Hapus
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="px-6 py-12 text-center text-slate-400">
+                    Belum ada tiket. Silakan tambahkan tiket baru.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal -->
+<div id="ticketModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 backdrop-blur-sm opacity-0 transition-opacity duration-300">
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-xl w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-300" id="modalContent">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold" id="modalTitle">Tambah Tiket Baru</h2>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+        
+        <form id="ticketForm" action="{{ url_for('main.add_ticket') }}" method="POST" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium mb-1">Nama Tiket</label>
+                <input name="name" required placeholder="Contoh: Tiket Masuk" class="w-full p-2 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Kategori</label>
+                <select name="category" class="w-full p-2 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
+                    <option value="personal" class="dark:bg-slate-800">Personal (Perorangan)</option>
+                    <option value="group" class="dark:bg-slate-800">Group (Rombongan)</option>
+                </select>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Harga Dewasa (Regular)</label>
+                    <input name="price_adult" type="number" required placeholder="0" class="w-full p-2 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Harga Anak (Regular)</label>
+                    <input name="price_child" type="number" required placeholder="0" class="w-full p-2 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
+                </div>
+            </div>
+
+            <div class="border-t border-slate-200 dark:border-slate-700 pt-4">
+                <h3 class="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-300">Harga Akhir Pekan (Weekend)</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs text-slate-500 mb-1">Dewasa (Weekend)</label>
+                        <input name="price_adult_weekend" type="number" placeholder="Opsional" class="w-full p-2 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-500 mb-1">Anak (Weekend)</label>
+                        <input name="price_child_weekend" type="number" placeholder="Opsional" class="w-full p-2 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-slate-200 dark:border-slate-700 pt-4">
+                <h3 class="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-300">Harga High Season</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs text-slate-500 mb-1">Dewasa (High Season)</label>
+                        <input name="price_adult_highseason" type="number" placeholder="Opsional" class="w-full p-2 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-500 mb-1">Anak (High Season)</label>
+                        <input name="price_child_highseason" type="number" placeholder="Opsional" class="w-full p-2 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
+                    </div>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Deskripsi</label>
+                <textarea name="desc" placeholder="Keterangan tiket..." class="w-full p-2 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600" rows="3"></textarea>
+            </div>
+            
+            <div>
+                <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded transition-colors">
+                    <input type="checkbox" name="is_active" id="ticketActive" class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" checked>
+                    <span class="text-sm font-medium">Status Aktif (Tampilkan di halaman depan)</span>
+                </label>
+            </div>
+            
+            <div class="pt-2 flex justify-end gap-2">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">Batal</button>
+                <button type="submit" id="submitBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Simpan Tiket</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const modal = document.getElementById('ticketModal');
+    const modalContent = document.getElementById('modalContent');
+    const form = document.getElementById('ticketForm');
+    const modalTitle = document.getElementById('modalTitle');
+    const submitBtn = document.getElementById('submitBtn');
+    const ticketActive = document.getElementById('ticketActive');
+
+    function openModal(isEdit = false) {
+        modal.classList.remove('hidden');
+        
+        if (!isEdit) {
+            modalTitle.textContent = 'Tambah Tiket Baru';
+            submitBtn.textContent = 'Simpan Tiket';
+            form.action = "{{ url_for('main.add_ticket') }}";
+            form.reset();
+            ticketActive.checked = true;
+        }
+        
+        // Small delay to allow display:block to apply before opacity transition
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modalContent.classList.remove('scale-95');
+            modalContent.classList.add('scale-100');
+        }, 10);
+    }
+
+    function editTicket(btn) {
+        openModal(true);
+        modalTitle.textContent = 'Edit Tiket';
+        submitBtn.textContent = 'Update Tiket';
+        
+        const id = btn.dataset.id;
+        form.action = `/ticket/edit/${id}`;
+        
+        form.name.value = btn.dataset.name;
+        form.category.value = btn.dataset.category || 'personal';
+        form.price_adult.value = btn.dataset.priceAdult;
+        form.price_child.value = btn.dataset.priceChild;
+        
+        form.price_adult_weekend.value = btn.dataset.priceAdultWeekend;
+        form.price_child_weekend.value = btn.dataset.priceChildWeekend;
+        form.price_adult_highseason.value = btn.dataset.priceAdultHighseason;
+        form.price_child_highseason.value = btn.dataset.priceChildHighseason;
+        
+        form.desc.value = btn.dataset.desc;
+        ticketActive.checked = btn.dataset.active === 'true';
+    }
+
+    function closeModal() {
+        modal.classList.add('opacity-0');
+        modalContent.classList.remove('scale-100');
+        modalContent.classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+    
+    // Close on click outside
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+</script>
+{% endblock %}

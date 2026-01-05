@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Tiket Wahana{% endblock %}</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 20px auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .header { background: #1e293b; color: #fff; padding: 20px; text-align: center; }
+        .header h1 { margin: 0; font-size: 24px; }
+        .content { padding: 30px; }
+        .footer { background: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #64748b; }
+        .btn { display: inline-block; padding: 10px 20px; background-color: #2563eb; color: #fff; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; }
+        .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .info-table th { text-align: left; padding: 10px; border-bottom: 1px solid #eee; color: #64748b; font-size: 14px; }
+        .info-table td { padding: 10px; border-bottom: 1px solid #eee; font-weight: 500; }
+        .qr-container { text-align: center; margin: 30px 0; padding: 20px; background: #f8fafc; border-radius: 8px; border: 2px dashed #cbd5e1; }
+        .qr-code { width: 200px; height: 200px; margin: 0 auto; }
+        .ticket-code { font-family: monospace; font-size: 24px; font-weight: bold; letter-spacing: 2px; color: #1e293b; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{{ settings.park_name if settings else 'Tiket Wahana' }}</h1>
+        </div>
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
+        <div class="footer">
+            <p>&copy; {{ settings.park_name if settings else 'Tiket Wahana' }}. All rights reserved.</p>
+            <p>{{ settings.park_info if settings else '' }}</p>
+        </div>
+    </div>
+</body>
+</html>
