@@ -17,6 +17,7 @@
     </h2>
     
     <form action="{{ url_for('main.update_email_settings') }}" method="POST" class="space-y-6">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         
         <!-- Sender Info -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
