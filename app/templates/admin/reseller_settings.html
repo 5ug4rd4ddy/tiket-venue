@@ -1,0 +1,47 @@
+{% extends "admin_base.html" %}
+{% block title %}Pengaturan Reseller{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold">Pengaturan Reseller</h1>
+    <p class="text-slate-500">Konfigurasi batasan deposit, masa aktif saldo, dan skema reseller.</p>
+</div>
+
+<div
+    class="max-w-2xl bg-white dark:bg-slate-800 p-8 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+    <form action="{{ url_for('main.admin_reseller_settings') }}" method="POST" class="space-y-6">
+        <div class="space-y-2">
+            <label class="block text-sm font-bold">Minimal Deposit Awal (Rp)</label>
+            <input type="number" name="min_reseller_deposit" value="{{ settings.min_reseller_deposit or 100000000 }}"
+                class="w-full p-2.5 rounded-lg border dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-blue-500 outline-none"
+                required>
+            <p class="text-xs text-slate-500">Minimal deposit untuk reseller baru</p>
+        </div>
+
+        <div class="space-y-2">
+            <label class="block text-sm font-bold">Minimal Deposit Perpanjangan (Rp)</label>
+            <input type="number" name="min_reseller_deposit_renewal"
+                value="{{ settings.min_reseller_deposit_renewal or 50000000 }}"
+                class="w-full p-2.5 rounded-lg border dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-blue-500 outline-none"
+                required>
+            <p class="text-xs text-slate-500">Minimal deposit untuk perpanjangan (setelah deposit pertama)</p>
+        </div>
+
+        <div>
+            <label class="block text-sm font-bold mb-2">Masa Aktif Saldo (Hari)</label>
+            <input type="number" name="reseller_deposit_duration_days"
+                value="{{ settings.reseller_deposit_duration_days or 365 }}"
+                class="w-full p-3 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
+            <p class="text-xs text-slate-500 mt-1">Saldo deposit akan berlaku selama jumlah hari ini sejak top-up
+                terakhir.</p>
+        </div>
+
+        <div class="pt-4 flex justify-end">
+            <button type="submit"
+                class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium flex items-center gap-2 w-full justify-center md:w-auto">
+                Simpan Pengaturan Reseller
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

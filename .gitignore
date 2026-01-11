@@ -4,11 +4,15 @@ __pycache__/
 .DS_Store
 .env
 .pytest_cache/
-*.db
 *.sqlite3
-prd.md
 tests/
+xendit-python/
 
-# Ignore uploads content but keep directory (if needed, otherwise just ignore folder)
+# Documentation & Notes
+*.md
+!README.md
+
+# Generated Content
 app/static/uploads/*
 !app/static/uploads/.gitkeep
+app/static/qrcodes/*

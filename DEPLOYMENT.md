@@ -12,11 +12,12 @@ Pastikan server telah terinstall:
 - Virtualenv
 - Nginx (atau CloudPanel)
 
-### Informasi Umum (Contoh)
-- **Domain**: `tiket.wahana.com`
-- **User Aplikasi**: `tiket-wahana`
-- **Path Project**: `/home/tiket-wahana/htdocs/tiket.wahana.com`
-- **Port Aplikasi**: `5000`
+### Informasi Server (Verified)
+- **Domain**: `demo-tiket-venue.tiketku.id`
+- **User Aplikasi**: `demo-tiket-venue`
+- **Path Project**: `/home/demo-tiket-venue/htdocs/demo-tiket-venue.tiketku.id`
+- **Port Aplikasi**: `5004`
+- **Service Name**: `demo-tiket-venue-gunicorn`
 
 ---
 
@@ -25,13 +26,14 @@ Pastikan server telah terinstall:
 Pastikan struktur file di server seperti berikut:
 
 ```
-/home/tiket-wahana/htdocs/tiket.wahana.com
+/home/demo-tiket-venue/htdocs/demo-tiket-venue.tiketku.id
 ├── app/
+│   └── static/   <-- File CSS/JS/Uploads ada di sini
 ├── instance/
 ├── venv/
 ├── requirements.txt
 ├── run.py
-└── wsgi.py  <-- File entry point untuk Gunicorn
+└── wsgi.py
 ```
 
 ---
@@ -41,7 +43,7 @@ Pastikan struktur file di server seperti berikut:
 Masuk ke direktori project dan setup virtual environment:
 
 ```bash
-cd /home/tiket-wahana/htdocs/tiket.wahana.com
+cd /home/demo-tiket-venue/htdocs/demo-tiket-venue.tiketku.id
 
 # Buat virtual environment
 python3 -m venv venv
@@ -76,29 +78,24 @@ if __name__ == "__main__":
 
 Buat file service systemd untuk menjalankan aplikasi di background.
 
-**File:** `/etc/systemd/system/tiket-wahana.service`
+**File:** `/etc/systemd/system/demo-tiket-venue-gunicorn.service`
 
 ```ini
 [Unit]
-Description=Gunicorn instance to serve Tiket Wahana
+Description=Gunicorn Flask demo-tiket-venue.tiketku.id
 After=network.target
 
 [Service]
-# Sesuaikan user dan group
-User=tiket-wahana
-Group=tiket-wahana
+User=demo-tiket-venue
+Group=demo-tiket-venue
 
-# Path ke direktori project
-WorkingDirectory=/home/tiket-wahana/htdocs/tiket.wahana.com
+WorkingDirectory=/home/demo-tiket-venue/htdocs/demo-tiket-venue.tiketku.id
 
-# Environment path (venv)
-Environment="PATH=/home/tiket-wahana/htdocs/tiket.wahana.com/venv/bin"
+Environment="PATH=/home/demo-tiket-venue/htdocs/demo-tiket-venue.tiketku.id/venv/bin"
 
-# Perintah menjalankan Gunicorn
-# Sesuaikan jumlah workers (2 * CPU + 1)
-ExecStart=/home/tiket-wahana/htdocs/tiket.wahana.com/venv/bin/gunicorn \
+ExecStart=/home/demo-tiket-venue/htdocs/demo-tiket-venue.tiketku.id/venv/bin/gunicorn \
     --workers 3 \
-    --bind 127.0.0.1:5000 \
+    --bind 127.0.0.1:5004 \
     --reload \
     wsgi:app
 
@@ -116,34 +113,60 @@ WantedBy=multi-user.target
 sudo systemctl daemon-reload
 
 # Start dan Enable service
-sudo systemctl start tiket-wahana
-sudo systemctl enable tiket-wahana
+sudo systemctl enable demo-tiket-venue-gunicorn
+sudo systemctl start demo-tiket-venue-gunicorn
 
 # Cek status
-sudo systemctl status tiket-wahana
+sudo systemctl status demo-tiket-venue-gunicorn
 ```
 
 ---
 
 ## 6. Konfigurasi Nginx / CloudPanel
 
-Aplikasi berjalan di `127.0.0.1:5000`. Setup Nginx sebagai Reverse Proxy.
+Aplikasi berjalan di `127.0.0.1:5004`. Setup Nginx sebagai Reverse Proxy.
 
-### Jika menggunakan CloudPanel:
-1. Masuk ke dashboard CloudPanel.
-2. Pilih Domain > **VHost**.
-3. Edit konfigurasi Nginx/VHost untuk mem-proxy request ke port 5000.
-4. Atau pada tab **Settings**, set **Port** ke `5000` jika menggunakan tipe aplikasi Python/Nodejs Generic.
+### 1. Masalah Static Files (CSS/Gambar 404)
 
-### Jika menggunakan Nginx Manual:
-Tambahkan blok lokasi di konfigurasi server block:
+Jika file static (CSS, Gambar) tidak muncul, biasanya karena masalah **Permission** pada direktori parent, atau konfigurasi Nginx yang belum benar.
+
+**Langkah A: Fix Permission Folder Utama (CRITICAL)**
+Nginx berjalan sebagai user `www-data` (atau `nginx`). Agar bisa membaca file di dalam `/home/demo-tiket-venue/...`, user Nginx harus punya hak akses "execute" (x) di folder Home user tersebut.
+
+```bash
+# 1. Buka akses Home Directory (agar Nginx bisa "lewat")
+chmod 755 /home/demo-tiket-venue
+
+# 2. Buka akses folder project
+chmod 755 /home/demo-tiket-venue/htdocs
+chmod 755 /home/demo-tiket-venue/htdocs/demo-tiket-venue.tiketku.id
+
+# 3. Buka akses folder app dan static
+cd /home/demo-tiket-venue/htdocs/demo-tiket-venue.tiketku.id
+chmod 755 app
+find app/static -type d -exec chmod 755 {} \;
+find app/static -type f -exec chmod 644 {} \;
+```
+
+**Langkah B: Konfigurasi Nginx**
+Tambahkan blok `location /static` **SEBELUM** blok `location /`.
 
 ```nginx
+# Konfigurasi untuk Static Files
+location /static {
+    alias /home/demo-tiket-venue/htdocs/demo-tiket-venue.tiketku.id/app/static;
+    expires 30d;
+    access_log off;
+    add_header Cache-Control "public";
+}
+
+# Konfigurasi Proxy ke Gunicorn
 location / {
-    proxy_pass http://127.0.0.1:5000;
+    proxy_pass http://127.0.0.1:5004;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
 }
 ```
 
@@ -151,12 +174,13 @@ location / {
 
 ## 7. Workflow Update Aplikasi
 
-Untuk mengupdate aplikasi tanpa downtime (jika menggunakan `--reload` di Gunicorn):
+Untuk mengupdate aplikasi tanpa downtime (menggunakan `--reload`):
 
 1. **Login ke server**:
    ```bash
-   ssh tiket-wahana@SERVER_IP
-   cd /home/tiket-wahana/htdocs/tiket.wahana.com
+   ssh root@SERVER_IP
+   su - demo-tiket-venue
+   cd /home/demo-tiket-venue/htdocs/demo-tiket-venue.tiketku.id
    ```
 
 2. **Pull perubahan terbaru**:
@@ -168,11 +192,10 @@ Untuk mengupdate aplikasi tanpa downtime (jika menggunakan `--reload` di Gunicor
    ```bash
    source venv/bin/activate
    pip install -r requirements.txt
-   sudo systemctl restart tiket-wahana
+   # Service akan auto-reload jika menggunakan flag --reload, 
+   # namun jika menambah library baru disarankan restart:
+   sudo systemctl restart demo-tiket-venue-gunicorn
    ```
-
-4. **Update Database (jika ada migrasi)**:
-   Pastikan menjalankan script migrasi jika struktur database berubah.
 
 ---
 
@@ -180,10 +203,46 @@ Untuk mengupdate aplikasi tanpa downtime (jika menggunakan `--reload` di Gunicor
 
 **Cek Log Gunicorn:**
 ```bash
-sudo journalctl -u tiket-wahana -f
+sudo journalctl -u demo-tiket-venue-gunicorn -f
 ```
 
 **Cek Port:**
 ```bash
-ss -tulpn | grep 5000
+ss -tulpn | grep 5004
 ```
+
+---
+
+## 9. Troubleshooting Lanjutan
+
+### Debugging Permission Path
+Jika masih 404, jalankan perintah ini untuk melihat di level mana akses diblokir:
+
+```bash
+namei -nom /home/demo-tiket-venue/htdocs/demo-tiket-venue.tiketku.id/app/static/css/style.css
+```
+
+**Cara Membaca Output:**
+Perhatikan kolom paling kiri. Nginx (user `www-data`) masuk dalam kategori **Others** (3 bit terakhir).
+- ❌ **SALAH:** `drwxrwx---` (User lain tidak bisa masuk/baca)
+- ✅ **BENAR:** `drwxr-xr-x` (User lain bisa read & execute/masuk)
+
+Jika Anda melihat baris seperti ini:
+`drwxrwx--- demo-tiket-venue demo-tiket-venue demo-tiket-venue`
+Artinya Nginx **DIBLOKIR** di folder home user tersebut. Solusinya wajib jalankan `chmod 755` di folder itu.
+
+### Cek Error Log Nginx
+Untuk melihat alasan pasti kenapa Nginx menolak (404 atau 403):
+```bash
+tail -f /var/log/nginx/error.log
+# Atau jika menggunakan CloudPanel (sesuaikan path log user)
+tail -f /home/demo-tiket-venue/logs/nginx/error.log
+```
+
+### Checklist Verifikasi Permission
+Pastikan output `namei -nom ...` atau `ls -la` menunjukkan permission berikut:
+- [ ] **Home User** (`/home/demo-tiket-venue`): `drwxr-xr-x` (755)
+- [ ] **Project Root**: `drwxr-xr-x` (755)
+- [ ] **Static Folder**: `drwxr-xr-x` (755)
+- [ ] **Sub-folder** (`static/uploads`, `static/qrcodes`): `drwxr-xr-x` (755)
+- [ ] **File** (`style.css`, gambar): `-rw-r--r--` (644)

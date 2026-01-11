@@ -1,0 +1,38 @@
+{% extends "email/base_email.html" %}
+
+{% block title %}Selamat Datang Reseller{% endblock %}
+
+{% block content %}
+<h2>Halo, {{ user.name }}!</h2>
+<p>Selamat bergabung sebagai mitra reseller di <strong>{{ settings.park_name if settings else 'Tiket Wahana'
+        }}</strong>.</p>
+<p>Akun reseller Anda telah berhasil dibuat oleh administrator. Berikut adalah detail login Anda:</p>
+
+<table class="info-table">
+    <tr>
+        <th>Email / No. Telp</th>
+        <td>{{ user.email }} / {{ user.phone }}</td>
+    </tr>
+    <tr>
+        <th>Password Sementara</th>
+        <td><strong style="font-size: 18px; color: #1e293b;">{{ password }}</strong></td>
+    </tr>
+    <tr>
+        <th>Agen Wisata</th>
+        <td>{{ user.agency_name or '-' }}</td>
+    </tr>
+</table>
+
+<p>Silakan login melalui tautan di bawah ini. Kami menyarankan Anda untuk segera mengubah password setelah login pertama
+    kali untuk keamanan akun Anda.</p>
+
+<div style="text-align: center;">
+    <a href="{{ login_url }}" class="btn" style="color: #fff;">Login ke Dashboard Reseller</a>
+</div>
+
+<p style="margin-top: 30px; font-size: 14px; color: #64748b;">
+    Jika Anda memiliki pertanyaan atau kendala, silakan hubungi tim dukungan kami melalui kontak yang tertera di bawah.
+</p>
+
+<p>Terima kasih atas kerja samanya!</p>
+{% endblock %}

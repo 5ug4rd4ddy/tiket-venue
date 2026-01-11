@@ -1,0 +1,296 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Detail Transaksi #{{ transaction.id }}{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex justify-between items-center">
+    <div>
+        <div class="flex items-center gap-2 text-sm text-slate-500 mb-1">
+            <a href="{{ url_for('main.admin_transactions') }}"
+                class="hover:text-blue-600 transition-colors">Transaksi</a>
+            <span>/</span>
+            <span>Detail</span>
+        </div>
+        <h1 class="text-2xl font-bold flex items-center gap-2">
+            {% if type == 'order' %}
+            Pesanan Tiket #{{ transaction.id }}
+            {% else %}
+            Deposit Reseller #{{ transaction.id }}
+            {% endif %}
+
+            <span id="headerStatusBadge"
+                class="px-3 py-1 text-xs font-bold rounded-full 
+                {% if transaction.payment_status == 'paid' or transaction.status == 'completed' %}
+                bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400
+                {% elif transaction.payment_status == 'pending' or transaction.status == 'pending' %}
+                bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400
+                {% else %}
+                bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400
+                {% endif %}">
+                {{ transaction.payment_status if type == 'order' else transaction.status }}
+            </span>
+        </h1>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Main Detail -->
+    <div class="lg:col-span-2 space-y-6">
+        <!-- Transaction Info -->
+        <div
+            class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div class="p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 font-bold">
+                Informasi Transaksi
+            </div>
+            <div class="p-6 grid grid-cols-2 gap-6">
+                <div>
+                    <div class="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Tanggal</div>
+                    <div class="font-medium">{{ transaction.created_at.strftime('%d %b %Y, %H:%M') }}</div>
+                </div>
+                <div>
+                    <div class="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Metode Pembayaran</div>
+                    <div class="font-medium capitalize">{{ transaction.payment_method or '-' }}</div>
+                </div>
+                {% if type == 'order' %}
+                <div>
+                    <div class="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Tanggal Kunjungan</div>
+                    <div class="font-medium">{{ transaction.visit_date }}</div>
+                </div>
+                <div>
+                    <div class="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Total Biaya</div>
+                    <div class="font-bold text-lg">Rp {{ "{:,}".format(transaction.total_price) }}</div>
+                </div>
+                <div class="col-span-2 border-t dark:border-slate-700 pt-4 mt-2">
+                     <div class="flex justify-between items-start">
+                        <div>
+                             <div class="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Status Pembayaran</div>
+                             <div class="flex items-center gap-2">
+                                <span class="font-medium capitalize" id="cardStatusText">{{ transaction.payment_status }}</span>
+                             </div>
+                        </div>
+                        <button onclick="toggleStatusEdit()" class="text-xs text-blue-600 hover:underline font-bold">Edit Pembayaran</button>
+                     </div>
+                     
+                     <!-- Payment Edit Form -->
+                     <div id="statusEditForm" class="hidden mt-3 p-4 bg-slate-50 dark:bg-slate-900 rounded border dark:border-slate-700">
+                        <div class="grid grid-cols-1 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold mb-1">Status:</label>
+                                <select id="newStatusSelect" class="text-sm p-2 border rounded bg-white dark:bg-slate-800 dark:border-slate-600 w-full">
+                                    <option value="pending" {% if transaction.payment_status == 'pending' %}selected{% endif %}>Pending</option>
+                                    <option value="paid" {% if transaction.payment_status == 'paid' %}selected{% endif %}>Paid (Lunas)</option>
+                                    <option value="failed" {% if transaction.payment_status == 'failed' %}selected{% endif %}>Failed (Gagal)</option>
+                                    <option value="expired" {% if transaction.payment_status == 'expired' %}selected{% endif %}>Expired (Kedaluwarsa)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold mb-1">Metode Pembayaran:</label>
+                                <select id="newPaymentMethodSelect" class="text-sm p-2 border rounded bg-white dark:bg-slate-800 dark:border-slate-600 w-full">
+                                    <option value="qris" {% if transaction.payment_method == 'qris' %}selected{% endif %}>QRIS</option>
+                                    <option value="gopay" {% if transaction.payment_method == 'gopay' %}selected{% endif %}>GoPay</option>
+                                    <option value="shopeepay" {% if transaction.payment_method == 'shopeepay' %}selected{% endif %}>ShopeePay</option>
+                                    <option value="ovo" {% if transaction.payment_method == 'ovo' %}selected{% endif %}>OVO</option>
+                                    <option value="linkaja" {% if transaction.payment_method == 'linkaja' %}selected{% endif %}>LinkAja</option>
+                                    <option value="dana" {% if transaction.payment_method == 'dana' %}selected{% endif %}>DANA</option>
+                                    <option value="va_bca" {% if transaction.payment_method == 'va_bca' %}selected{% endif %}>VA BCA</option>
+                                    <option value="va_mandiri" {% if transaction.payment_method == 'va_mandiri' %}selected{% endif %}>VA Mandiri</option>
+                                    <option value="va_bni" {% if transaction.payment_method == 'va_bni' %}selected{% endif %}>VA BNI</option>
+                                    <option value="va_bri" {% if transaction.payment_method == 'va_bri' %}selected{% endif %}>VA BRI</option>
+                                    <option value="card" {% if transaction.payment_method == 'card' %}selected{% endif %}>Kartu Kredit/Debit</option>
+                                    <option value="cash" {% if transaction.payment_method == 'cash' %}selected{% endif %}>Cash / Tunai</option>
+                                    <option value="transfer" {% if transaction.payment_method == 'transfer' %}selected{% endif %}>Transfer Manual</option>
+                                </select>
+                            </div>
+                            <div class="flex gap-2 mt-2">
+                                <button onclick="updateStatus({{ transaction.id }})" class="bg-blue-600 text-white text-xs px-4 py-2 rounded hover:bg-blue-700 font-medium">Simpan Perubahan</button>
+                                <button onclick="toggleStatusEdit()" class="text-slate-500 hover:text-slate-700 text-xs px-4 py-2 font-medium">Batal</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if transaction.payment_status == 'paid' %}
+                <div class="col-span-2 pt-2">
+                    <a href="{{ url_for('main.admin_download_invoice', order_id=transaction.id) }}" target="_blank" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm py-2 px-4 rounded-lg transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        Download Invoice
+                    </a>
+                </div>
+                {% endif %}
+                
+                {% else %}
+                <div>
+                    <div class="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Deskripsi</div>
+                    <div class="font-medium">{{ transaction.description }}</div>
+                </div>
+                <div>
+                    <div class="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Jumlah Top-up</div>
+                    <div class="font-bold text-lg text-green-600">+ Rp {{ "{:,}".format(transaction.amount) }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if type == 'order' %}
+        <!-- Order Items -->
+        <div
+            class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div class="p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 font-bold">
+                Rincian Pesanan
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-50 dark:bg-slate-800/50">
+                        <tr>
+                            <th class="px-6 py-3 text-left font-bold text-slate-500">Item</th>
+                            <th class="px-6 py-3 text-right font-bold text-slate-500">Harga</th>
+                            <th class="px-6 py-3 text-right font-bold text-slate-500">Qty</th>
+                            <th class="px-6 py-3 text-right font-bold text-slate-500">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+                        <!-- Tickets -->
+                        {% if details.get('items') %}
+                        {% for item in details['items'] %}
+                        <tr>
+                            <td class="px-6 py-4">
+                                <div class="font-medium">{{ item.name }}</div>
+                            </td>
+                            <td class="px-6 py-4 text-right">Rp {{ "{:,}".format(item.price) }}</td>
+                            <td class="px-6 py-4 text-right">{{ item.qty }}</td>
+                            <td class="px-6 py-4 text-right font-medium">Rp {{ "{:,}".format(item.subtotal) }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% endif %}
+
+                        <!-- Addons -->
+                        {% if details.get('addons') %}
+                        {% for item in details['addons'] %}
+                        <tr>
+                            <td class="px-6 py-4">
+                                <div class="font-medium">{{ item.name }}</div>
+                                <div
+                                    class="text-xs text-slate-500 bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full inline-block">
+                                    Addon</div>
+                            </td>
+                            <td class="px-6 py-4 text-right">Rp {{ "{:,}".format(item.price) }}</td>
+                            <td class="px-6 py-4 text-right">-</td>
+                            <td class="px-6 py-4 text-right font-medium">Rp {{ "{:,}".format(item.price) }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% endif %}
+                    </tbody>
+                    <tfoot class="bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700">
+                        {% if details.payment and details.payment.discount > 0 %}
+                        <tr>
+                            <td colspan="3" class="px-6 py-2 text-right text-red-600">Diskon {{ '(' + details.payment.promo_code + ')' if details.payment.promo_code else '' }}</td>
+                            <td class="px-6 py-2 text-right text-red-600">- Rp {{ "{:,}".format(details.payment.discount) }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <td colspan="3" class="px-6 py-4 text-right font-bold">Total</td>
+                            <td class="px-6 py-4 text-right font-bold text-base">Rp {{
+                                "{:,}".format(transaction.total_price) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Customer / User Info -->
+    <div class="lg:col-span-1 space-y-6">
+        <div
+            class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div class="p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 font-bold">
+                {% if type == 'order' %}Data Pemesan{% else %}Data Reseller{% endif %}
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="flex items-center gap-4 mb-4">
+                    <div
+                        class="w-12 h-12 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xl">
+                        {{ (transaction.user.name if transaction.user else (transaction.customer_name or 'U'))[0]|upper }}
+                    </div>
+                    <div>
+                        <div class="font-bold">{{ transaction.user.name if transaction.user else
+                            transaction.customer_name }}</div>
+                        <div class="text-sm text-slate-500">{{ transaction.user.role|capitalize if transaction.user else
+                            'Guest' }}</div>
+                    </div>
+                </div>
+
+                <div class="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-700">
+                    <div>
+                        <div class="text-xs text-slate-500 uppercase font-bold mb-1">Email</div>
+                        <div class="text-sm truncate">{{ transaction.user.email if transaction.user else
+                            transaction.customer_email }}</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-500 uppercase font-bold mb-1">WhatsApp / Telepon</div>
+                        <div class="text-sm">{{ transaction.customer_phone or '-' }}</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-500 uppercase font-bold mb-1">Domisili</div>
+                        <div class="text-sm">{{ transaction.customer_domicile or '-' }}</div>
+                    </div>
+                </div>
+                
+                {% if group_info %}
+                <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+                    <h4 class="text-xs font-bold text-indigo-500 uppercase mb-3">Info Group</h4>
+                    <div class="space-y-3">
+                        <div>
+                            <div class="text-xs text-slate-500 uppercase font-bold mb-1">Nama Group</div>
+                            <div class="text-sm font-medium">{{ group_info.name or '-' }}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-slate-500 uppercase font-bold mb-1">Jumlah Peserta</div>
+                            <div class="text-sm font-medium">{{ group_info.size or '-' }} Pax</div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleStatusEdit() {
+        const form = document.getElementById('statusEditForm');
+        form.classList.toggle('hidden');
+    }
+
+    async function updateStatus(orderId) {
+        const newStatus = document.getElementById('newStatusSelect').value;
+        const newMethod = document.getElementById('newPaymentMethodSelect').value;
+        
+        if (!confirm('Apakah anda yakin ingin mengubah data pembayaran?')) return;
+        
+        try {
+            const response = await fetch(`/dashboard/transaction/${orderId}/update-status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    status: newStatus,
+                    payment_method: newMethod
+                })
+            });
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                // Reload page to reflect changes
+                window.location.reload();
+            } else {
+                alert('Gagal update status: ' + (data.error || 'Unknown error'));
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Terjadi kesalahan saat update status');
+        }
+    }
+</script>
+{% endblock %}

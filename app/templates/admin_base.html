@@ -1,196 +1,365 @@
 <!doctype html>
 <html lang="id">
+
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>{% block title %}Admin Dashboard{% endblock %}</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-    }
-    
-    // Apply theme immediately to avoid flash
-    const saved = localStorage.getItem('theme');
-    if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        document.documentElement.classList.add('dark');
-    }
-  </script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <style>
-      /* Custom scrollbar for sidebar */
-      .sidebar-scroll::-webkit-scrollbar { width: 6px; }
-      .sidebar-scroll::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,0.1); border-radius: 3px; }
-  </style>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}Admin Dashboard{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+
+        // Apply theme immediately to avoid flash
+        const saved = localStorage.getItem('theme');
+        if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Custom scrollbar for sidebar */
+        .sidebar-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar-scroll::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+    </style>
 </head>
+
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 flex h-screen overflow-hidden">
 
-  <!-- Sidebar -->
-  <aside class="w-64 bg-slate-800 text-white flex-shrink-0 flex flex-col transition-all duration-300" id="sidebar">
-    <div class="p-6 border-b border-slate-700 flex items-center gap-3">
-        {% if site.logo_url %}
+    <!-- Sidebar -->
+    <aside class="w-64 bg-slate-800 text-white flex-shrink-0 flex flex-col transition-all duration-300" id="sidebar">
+        <div class="p-6 border-b border-slate-700 flex items-center gap-3">
+            {% if site.logo_url %}
             {% if site.logo_url.startswith('http') %}
             <img src="{{ site.logo_url }}" class="w-8 h-8 rounded bg-white object-cover">
             {% else %}
-            <img src="{{ url_for('static', filename='uploads/' + site.logo_url) }}" class="w-8 h-8 rounded bg-white object-cover">
+            <img src="{{ url_for('static', filename='uploads/' + site.logo_url) }}"
+                class="w-8 h-8 rounded bg-white object-cover">
             {% endif %}
-        {% else %}
-        <div class="w-8 h-8 rounded bg-indigo-600 flex items-center justify-center text-white font-bold text-xs">A</div>
-        {% endif %}
-        <span class="font-bold text-lg tracking-wide">Admin Panel</span>
-    </div>
-    
-    <nav class="flex-1 overflow-y-auto sidebar-scroll p-4 space-y-1">
-        <!-- DASHBOARD -->
-        <a href="{{ url_for('main.dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if request.endpoint == 'main.dashboard' %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-            Dashboard
-        </a>
+            {% else %}
+            <div class="w-8 h-8 rounded bg-indigo-600 flex items-center justify-center text-white font-bold text-xs">A
+            </div>
+            {% endif %}
+            <span class="font-bold text-lg tracking-wide">Admin Panel</span>
+        </div>
 
-        <!-- MANAJEMEN PRODUK -->
-        <p class="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 mt-6">Manajemen Produk</p>
-        
-        <a href="{{ url_for('main.admin_tickets') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if 'tickets' in request.endpoint %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
-            Tiket
-        </a>
+        <nav class="flex-1 overflow-y-auto sidebar-scroll p-4 space-y-1">
+            <!-- DASHBOARD -->
+            <a href="{{ url_for('main.dashboard') }}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if request.endpoint == 'main.dashboard' %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                Dashboard
+            </a>
 
-        <a href="{{ url_for('main.admin_addons') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if 'addons' in request.endpoint %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
-            Addon
-        </a>
+            <!-- TRANSAKSI -->
+            <p class="px-4 pt-4 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 mt-6">Transaksi</p>
 
-        <a href="{{ url_for('main.admin_partners') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if 'partners' in request.endpoint %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
-            Partner
-        </a>
+            <a href="{{ url_for('main.admin_transactions') }}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if 'transactions' in request.endpoint and not request.args.get('type') == 'deposit' %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+                Riwayat Transaksi
+            </a>
 
-        <!-- TRANSAKSI -->
-        <p class="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 mt-6">Transaksi</p>
+            <a href="{{ url_for('main.admin_transactions', type='deposit') }}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if request.args.get('type') == 'deposit' %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 10h18"></path>
+                    <path d="M3 14h18"></path>
+                    <path d="M5 6h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"></path>
+                </svg>
+                Riwayat Deposit
+            </a>
 
-        <a href="{{ url_for('main.admin_transactions') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if 'transactions' in request.endpoint %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-            Riwayat Transaksi
-        </a>
-        
-        <!-- LAPORAN -->
-        <p class="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 mt-6">Laporan</p>
+            <!-- LAPORAN -->
+            <p class="px-4 pt-4 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 mt-6">Laporan</p>
 
-        <a href="{{ url_for('main.admin_reports') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if 'reports' in request.endpoint %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
-             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-            Laporan Penjualan
-        </a>
+            <a href="{{ url_for('main.admin_reports') }}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if 'reports' in request.endpoint %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                Laporan Penjualan
+            </a>
 
-        <a href="{{ url_for('main.admin_checkins') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if 'checkins' in request.endpoint %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
-             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
-            Laporan Check-in
-        </a>
+            <a href="{{ url_for('main.admin_checkins') }}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if 'checkins' in request.endpoint %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="8.5" cy="7" r="4"></circle>
+                    <polyline points="17 11 19 13 23 9"></polyline>
+                </svg>
+                Laporan Check-in
+            </a>
 
-        <a href="{{ url_for('main.admin_wristbands') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if 'wristbands' in request.endpoint %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
-             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"></circle><polyline points="12 9 12 12 13.5 13.5"></polyline><path d="M16.51 17.35l-.35 3.83a2 2 0 0 1-2 1.82H9.83a2 2 0 0 1-2-1.82l-.35-3.83m.01-10.7l.35-3.83A2 2 0 0 1 9.83 1h4.35a2 2 0 0 1 2 1.82l.35 3.83"></path></svg>
-            Laporan Tukar Gelang
-        </a>
+            <a href="{{ url_for('main.admin_wristbands') }}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if 'wristbands' in request.endpoint %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="7"></circle>
+                    <polyline points="12 9 12 12 13.5 13.5"></polyline>
+                    <path
+                        d="M16.51 17.35l-.35 3.83a2 2 0 0 1-2 1.82H9.83a2 2 0 0 1-2-1.82l-.35-3.83m.01-10.7l.35-3.83A2 2 0 0 1 9.83 1h4.35a2 2 0 0 1 2 1.82l.35 3.83">
+                    </path>
+                </svg>
+                Laporan Tukar Gelang
+            </a>
 
-        <!-- PENGATURAN -->
-        <p class="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 mt-6">Pengaturan</p>
+            <!-- MANAJEMEN PRODUK -->
+            <p class="px-4 pt-4 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 mt-6">Manajemen Produk</p>
 
-        <a href="{{ url_for('main.admin_gates') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if 'gates' in request.endpoint %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8"></path><path d="M4 6h16"></path><path d="M9 6v15"></path><path d="M15 6v15"></path></svg>
-            Manajemen Gate
-        </a>
+            <a href="{{ url_for('main.admin_tickets') }}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if 'tickets' in request.endpoint %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                    <polyline points="13 2 13 9 20 9"></polyline>
+                </svg>
+                Tiket
+            </a>
 
-        <a href="{{ url_for('main.admin_users') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if 'users' in request.endpoint %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-            Manajemen User
-        </a>
+            <a href="{{ url_for('main.admin_addons') }}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if 'addons' in request.endpoint %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+                Addon
+            </a>
 
-        <a href="{{ url_for('main.admin_calendar') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if 'calendar' in request.endpoint %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-            Manajemen Kalender
-        </a>
+            <a href="{{ url_for('main.admin_promos') }}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if 'promos' in request.endpoint %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                    <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                </svg>
+                Promo Code
+            </a>
 
-        <a href="{{ url_for('main.admin_settings') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if 'settings' in request.endpoint and 'email' not in request.endpoint %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-            Pengaturan Situs
-        </a>
+            <a href="{{ url_for('main.admin_calendar') }}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if 'calendar' in request.endpoint %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                Kalender (Libur)
+            </a>
 
-        <a href="{{ url_for('main.admin_email_settings') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if 'email' in request.endpoint %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-            Pengaturan Email
-        </a>
+            <!-- KEMITRAAN -->
+            <p class="px-4 pt-4 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 mt-6">Kemitraan</p>
 
-        <a href="{{ url_for('main.admin_payments') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if 'payments' in request.endpoint %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
-            Pengaturan Pembayaran
-        </a>
-    </nav>
-    
-    <div class="p-4 border-t border-slate-700">
-        <a href="{{ url_for('main.index') }}" target="_blank" class="flex items-center gap-3 px-4 py-2 text-slate-400 hover:text-white transition-colors text-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-            Lihat Website
-        </a>
-        <a href="{{ url_for('main.logout') }}" class="flex items-center gap-3 px-4 py-2 text-red-400 hover:text-red-300 transition-colors text-sm mt-1">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-            Logout
-        </a>
-    </div>
-  </aside>
+            <a href="{{ url_for('main.admin_partners') }}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if 'partners' in request.endpoint %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                </svg>
+                Partner
+            </a>
 
-  <!-- Main Content -->
-  <main class="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50 dark:bg-slate-900 relative">
-    
-    <!-- Mobile Header -->
-    <header class="md:hidden h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 z-20">
-        <div class="font-bold text-lg">Admin Panel</div>
-        <button id="mobileMenuBtn" class="p-2 text-slate-600 dark:text-slate-300">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-        </button>
-    </header>
+            <a href="{{ url_for('main.admin_resellers') }}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if request.endpoint == 'main.admin_resellers' %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="8.5" cy="7" r="4"></circle>
+                    <polyline points="17 11 19 13 23 9"></polyline>
+                </svg>
+                Reseller
+            </a>
 
-    <div class="flex-1 overflow-y-auto p-4 md:p-8">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
+            <a href="{{ url_for('main.admin_reseller_settings') }}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if request.endpoint == 'main.admin_reseller_settings' %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                    </path>
+                </svg>
+                Pengaturan Reseller
+            </a>
+
+            <!-- SISTEM & OPERASIONAL -->
+            <p class="px-4 pt-4 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 mt-6">Sistem & Operasional</p>
+
+            <a href="{{ url_for('main.admin_users') }}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if request.endpoint == 'main.admin_users' and not request.args.get('role') %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                Manajemen User
+            </a>
+
+            <a href="{{ url_for('main.admin_gates') }}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if 'gates' in request.endpoint %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 21v-8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8"></path>
+                    <path d="M4 6h16"></path>
+                    <path d="M9 6v15"></path>
+                    <path d="M15 6v15"></path>
+                </svg>
+                Manajemen Gate
+            </a>
+
+            <!-- KONFIGURASI -->
+            <p class="px-4 pt-4 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 mt-6">Konfigurasi</p>
+
+            <a href="{{ url_for('main.admin_settings') }}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if 'settings' in request.endpoint and 'email' not in request.endpoint and 'reseller' not in request.endpoint %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                    </path>
+                </svg>
+                Pengaturan Situs
+            </a>
+
+            <a href="{{ url_for('main.admin_email_settings') }}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if 'email' in request.endpoint %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+                Pengaturan Email
+            </a>
+
+            <a href="{{ url_for('main.admin_payments') }}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-700 transition-colors {% if 'payments' in request.endpoint %}bg-slate-700 text-white{% else %}text-slate-300{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                    <line x1="1" y1="10" x2="23" y2="10"></line>
+                </svg>
+                Pengaturan Pembayaran
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-slate-700">
+            <a href="{{ url_for('main.index') }}" target="_blank"
+                class="flex items-center gap-3 px-4 py-2 text-slate-400 hover:text-white transition-colors text-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+                Lihat Website
+            </a>
+            <a href="{{ url_for('main.logout') }}"
+                class="flex items-center gap-3 px-4 py-2 text-red-400 hover:text-red-300 transition-colors text-sm mt-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                Logout
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50 dark:bg-slate-900 relative">
+
+        <!-- Mobile Header -->
+        <header
+            class="md:hidden h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 z-20">
+            <div class="font-bold text-lg">Admin Panel</div>
+            <button id="mobileMenuBtn" class="p-2 text-slate-600 dark:text-slate-300">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-4 md:p-8">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
             {% for category, message in messages %}
-              <div class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+            <div
+                class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
                 {{ message }}
-              </div>
+            </div>
             {% endfor %}
-          {% endif %}
-        {% endwith %}
+            {% endif %}
+            {% endwith %}
 
-        {% block content %}{% endblock %}
-    </div>
-  </main>
+            {% block content %}{% endblock %}
+        </div>
+    </main>
 
-  <script>
-    // Mobile menu toggle
-    const btn = document.getElementById('mobileMenuBtn');
-    const sidebar = document.getElementById('sidebar');
-    
-    btn.addEventListener('click', () => {
-        sidebar.classList.toggle('-translate-x-full');
-        sidebar.classList.toggle('absolute');
-        sidebar.classList.toggle('z-30');
-        sidebar.classList.toggle('h-full');
-    });
+    <script>
+        // Mobile menu toggle
+        const btn = document.getElementById('mobileMenuBtn');
+        const sidebar = document.getElementById('sidebar');
 
-    // Handle resize
-    window.addEventListener('resize', () => {
-        if(window.innerWidth >= 768) {
-            sidebar.classList.remove('-translate-x-full', 'absolute', 'z-30', 'h-full');
-        } else {
+        btn.addEventListener('click', () => {
+            sidebar.classList.toggle('-translate-x-full');
+            sidebar.classList.toggle('absolute');
+            sidebar.classList.toggle('z-30');
+            sidebar.classList.toggle('h-full');
+        });
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth >= 768) {
+                sidebar.classList.remove('-translate-x-full', 'absolute', 'z-30', 'h-full');
+            } else {
+                sidebar.classList.add('-translate-x-full', 'absolute', 'z-30', 'h-full');
+            }
+        });
+
+        // Initial check
+        if (window.innerWidth < 768) {
             sidebar.classList.add('-translate-x-full', 'absolute', 'z-30', 'h-full');
         }
-    });
-
-    // Initial check
-    if(window.innerWidth < 768) {
-        sidebar.classList.add('-translate-x-full', 'absolute', 'z-30', 'h-full');
-    }
-  </script>
-  {% block scripts %}{% endblock %}
+    </script>
+    {% block scripts %}{% endblock %}
 </body>
+
 </html>

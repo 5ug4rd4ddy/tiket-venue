@@ -47,6 +47,7 @@
                         Edit
                     </button>
                     <form action="{{ url_for('main.delete_gate', id=gate.id) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus gate ini?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="text-red-500 hover:text-red-700 flex items-center gap-1">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                             Hapus
@@ -76,6 +77,7 @@
         </div>
         
         <form id="gateForm" action="{{ url_for('main.add_gate') }}" method="POST" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div>
                 <label class="block text-sm font-medium mb-1">Nama Gate</label>
                 <input name="name" required placeholder="Contoh: Gate Utama" class="w-full p-2 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">

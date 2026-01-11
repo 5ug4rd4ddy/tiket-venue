@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>{% block title %}{{ site.park_name }}{% endblock %}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -16,6 +17,7 @@
 </head>
 <body class="min-h-screen bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 transition-colors duration-300">
   
+  {% block header %}
   <header class="fixed top-4 left-1/2 -translate-x-1/2 w-[95%] max-w-3xl z-50 rounded-2xl shadow-lg p-4 flex items-center justify-between gap-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md">
     <div class="flex items-center gap-4">
       <a href="{{ url_for('main.index') }}">
@@ -47,8 +49,9 @@
         {% endif %}
     </div>
   </header>
+  {% endblock %}
 
-  <main class="pt-28 pb-16 flex justify-center">
+  <main class="{% block main_class %}pt-28 pb-16 flex justify-center{% endblock %}">
     {% block content %}{% endblock %}
   </main>
 
@@ -58,10 +61,13 @@
     if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.documentElement.classList.add('dark');
     }
-    document.getElementById('themeToggle').addEventListener('click', ()=>{
-        const isDark = document.documentElement.classList.toggle('dark');
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    });
+    const themeToggleBtn = document.getElementById('themeToggle');
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', ()=>{
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        });
+    }
   </script>
   {% block scripts %}{% endblock %}
 </body>

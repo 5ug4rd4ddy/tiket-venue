@@ -1,0 +1,35 @@
+{% extends "email/base_email.html" %}
+
+{% block title %}Pesanan Kedaluwarsa #{{ order.invoice_number }}{% endblock %}
+
+{% block content %}
+<h2>Halo {{ order.customer_name }},</h2>
+<p>Mohon maaf, pesanan Anda dengan nomor invoice <strong>{{ order.invoice_number }}</strong> telah kedaluwarsa karena batas waktu pembayaran telah berakhir.</p>
+
+<table class="info-table">
+    <tr>
+        <th>No. Invoice</th>
+        <td>{{ order.invoice_number }}</td>
+    </tr>
+    <tr>
+        <th>Tanggal Pesan</th>
+        <td>{{ order.created_at | date_with_day }}</td>
+    </tr>
+    <tr>
+        <th>Total Tagihan</th>
+        <td style="font-size: 18px; color: #64748b;">Rp {{ "{:,.0f}".format(order.total_price).replace(',', '.') }}</td>
+    </tr>
+    <tr>
+        <th>Status</th>
+        <td>
+            <span style="color: #ef4444; font-weight: bold;">KEDALUWARSA / EXPIRED</span>
+        </td>
+    </tr>
+</table>
+
+<p>Jika Anda masih ingin melakukan pemesanan, silakan melakukan pemesanan ulang melalui website kami.</p>
+
+<div style="text-align: center; margin-top: 30px;">
+    <a href="{{ url_for('main.index', _external=True) }}" class="btn">Pesan Tiket Baru</a>
+</div>
+{% endblock %}

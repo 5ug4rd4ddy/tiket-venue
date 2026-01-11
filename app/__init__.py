@@ -1,9 +1,15 @@
 import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from flask_wtf.csrf import CSRFProtect
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Inisialisasi DB di global scope
 db = SQLAlchemy()
+csrf = CSRFProtect()
 
 def create_app(test_config=None):
     app = Flask(__name__)
@@ -33,14 +39,16 @@ def create_app(test_config=None):
         os.makedirs(app.config['UPLOAD_FOLDER'])
 
     db.init_app(app)
+    csrf.init_app(app)
 
     # Import routes setelah app dibuat untuk menghindari circular import
     from .routes import main
     app.register_blueprint(main)
 
-    # Context Processor untuk Site Settings
-    from .models import SiteSetting
+    # Context Processor untuk Site Settings dan User
+    from .models import SiteSetting, User
     from datetime import datetime, timedelta
+    from flask import session
 
     @app.template_filter('wib_format')
     def wib_format_filter(dt):
@@ -65,16 +73,16 @@ def create_app(test_config=None):
             return date_str
 
     @app.context_processor
-    def inject_site_settings():
+    def inject_global_context():
         settings = SiteSetting.query.first()
         if not settings:
-            # Create default if not exists
             settings = SiteSetting()
-            # We don't commit here to avoid side effects in context processor,
-            # but usually it's better to ensure it exists on app startup.
-            # For simplicity, we just return the default object (not saved to DB yet)
-            # or we can handle creation in a separate function.
-        return dict(site=settings)
+            
+        current_user = None
+        if session.get('user_id'):
+            current_user = User.query.get(session.get('user_id'))
+            
+        return dict(site=settings, current_user=current_user)
 
     with app.app_context():
         db.create_all() # Buat tabel jika belum ada

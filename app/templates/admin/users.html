@@ -1,25 +1,54 @@
 {% extends "admin_base.html" %}
-{% block title %}Kelola User{% endblock %}
+{% block title %}{% if active_role == 'reseller' %}Kelola Reseller{% else %}Kelola User{% endif %}{% endblock %}
 
 {% block content %}
 <div class="flex justify-between items-center mb-6">
     <div>
-        <h1 class="text-2xl font-bold">Manajemen User</h1>
-        <p class="text-slate-500">Kelola daftar pengguna yang dapat mengakses dashboard admin.</p>
+        <h1 class="text-2xl font-bold">{% if active_role == 'reseller' %}Manajemen Reseller{% else %}Manajemen User{%
+            endif %}</h1>
+        <p class="text-slate-500">{% if active_role == 'reseller' %}Kelola daftar reseller untuk pemesanan tiket.{% else
+            %}Kelola daftar pengguna yang dapat mengakses dashboard admin.{% endif %}</p>
     </div>
-    <button onclick="openModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+    {% if active_role == 'reseller' %}
+    <a href="{{ url_for('main.admin_add_reseller') }}"
+        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Tambah Reseller
+    </a>
+    {% else %}
+    <button onclick="openModal()"
+        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
         Tambah User
     </button>
+    {% endif %}
 </div>
 
-<div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+<div
+    class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
     <table class="w-full text-left text-sm">
         <thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
             <tr>
+                {% if active_role == 'reseller' %}
+                <th class="px-6 py-4 font-semibold">Email</th>
+                {% else %}
                 <th class="px-6 py-4 font-semibold">Username</th>
-                <th class="px-6 py-4 font-semibold">Nama Lengkap</th>
+                {% endif %}
+                <th class="px-6 py-4 font-semibold">Nama PIC</th>
+                {% if active_role == 'reseller' %}
+                <th class="px-6 py-4 font-semibold">Agen Wisata</th>
+                <th class="px-6 py-4 font-semibold">Telepon</th>
+                {% else %}
                 <th class="px-6 py-4 font-semibold">Role</th>
+                {% endif %}
                 <th class="px-6 py-4 font-semibold">Status</th>
                 <th class="px-6 py-4 font-semibold text-right">Aksi</th>
             </tr>
@@ -27,13 +56,23 @@
         <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
             {% for user in users %}
             <tr class="hover:bg-slate-50 dark:hover:bg-slate-900/50">
+                {% if active_role == 'reseller' %}
+                <td class="px-6 py-4 font-medium">{{ user.email or '-' }}</td>
+                {% else %}
                 <td class="px-6 py-4 font-medium">{{ user.username }}</td>
+                {% endif %}
                 <td class="px-6 py-4">{{ user.name }}</td>
+                {% if active_role == 'reseller' %}
+                <td class="px-6 py-4 text-slate-500">{{ user.agency_name or '-' }}</td>
+                <td class="px-6 py-4 text-slate-500">{{ user.phone or '-' }}</td>
+                {% else %}
                 <td class="px-6 py-4">
-                    <span class="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                    <span
+                        class="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                         {{ user.role }}
                     </span>
                 </td>
+                {% endif %}
                 <td class="px-6 py-4">
                     <span class="px-2 py-1 rounded-full text-xs font-medium 
                         {% if user.is_active %} bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300
@@ -42,21 +81,42 @@
                     </span>
                 </td>
                 <td class="px-6 py-4 text-right flex justify-end gap-3">
-                    <button 
-                        onclick="editUser(this)"
-                        data-id="{{ user.id }}"
-                        data-username="{{ user.username }}"
-                        data-name="{{ user.name }}"
-                        data-role="{{ user.role }}"
+                    {% if active_role == 'reseller' %}
+                    <a href="{{ url_for('main.admin_edit_reseller', id=user.id) }}"
+                        class="text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                        Edit
+                    </a>
+                    {% else %}
+                    <button onclick="editUser(this)" data-id="{{ user.id }}" data-username="{{ user.username }}"
+                        data-name="{{ user.name }}" data-role="{{ user.role }}"
                         data-active="{{ 'true' if user.is_active else 'false' }}"
                         class="text-blue-600 hover:text-blue-800 flex items-center gap-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
                         Edit
                     </button>
+                    {% endif %}
                     {% if user.id != session.get('user_id') %}
-                    <form action="{{ url_for('main.delete_user', id=user.id) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus user ini?');">
+                    <form action="{{ url_for('main.delete_user', id=user.id) }}" method="POST"
+                        onsubmit="return confirm('Yakin ingin menghapus user ini?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="text-red-500 hover:text-red-700 flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path
+                                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                </path>
+                            </svg>
                             Hapus
                         </button>
                     </form>
@@ -75,47 +135,65 @@
 </div>
 
 <!-- Modal -->
-<div id="userModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 backdrop-blur-sm opacity-0 transition-opacity duration-300">
-    <div class="bg-white dark:bg-slate-800 p-6 rounded-xl w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-300" id="modalContent">
+<div id="userModal"
+    class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 backdrop-blur-sm opacity-0 transition-opacity duration-300">
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-xl w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-300"
+        id="modalContent">
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-xl font-bold" id="modalTitle">Tambah User Baru</h2>
             <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
             </button>
         </div>
-        
+
         <form id="userForm" action="{{ url_for('main.add_user') }}" method="POST" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div>
                 <label class="block text-sm font-medium mb-1">Username</label>
-                <input name="username" required placeholder="username" class="w-full p-2 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
+                <input name="username" required placeholder="username"
+                    class="w-full p-2 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
             </div>
             <div>
                 <label class="block text-sm font-medium mb-1">Nama Lengkap</label>
-                <input name="name" required placeholder="Nama User" class="w-full p-2 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
+                <input name="name" required placeholder="Nama User"
+                    class="w-full p-2 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
             </div>
             <div>
                 <label class="block text-sm font-medium mb-1">Password</label>
-                <input name="password" type="password" placeholder="********" class="w-full p-2 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
-                <p class="text-xs text-slate-500 mt-1 hidden" id="passwordHint">Biarkan kosong jika tidak ingin mengubah password.</p>
+                <input name="password" type="password" placeholder="********"
+                    class="w-full p-2 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
+                <p class="text-xs text-slate-500 mt-1 hidden" id="passwordHint">Biarkan kosong jika tidak ingin mengubah
+                    password.</p>
             </div>
             <div>
                 <label class="block text-sm font-medium mb-1">Role</label>
-                <select name="role" class="w-full p-2 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
+                <select name="role"
+                    class="w-full p-2 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
                     <option value="admin">Admin</option>
                     <option value="operator">Operator</option>
+                    <option value="reseller">Reseller</option>
                 </select>
             </div>
-            
+
             <div>
-                <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded transition-colors">
-                    <input type="checkbox" name="is_active" id="userActive" class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" checked>
+                <label
+                    class="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded transition-colors">
+                    <input type="checkbox" name="is_active" id="userActive"
+                        class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" checked>
                     <span class="text-sm font-medium">Status Aktif</span>
                 </label>
             </div>
-            
+
             <div class="pt-2 flex justify-end gap-2">
-                <button type="button" onclick="closeModal()" class="px-4 py-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">Batal</button>
-                <button type="submit" id="submitBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Simpan User</button>
+                <button type="button" onclick="closeModal()"
+                    class="px-4 py-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">Batal</button>
+                <button type="submit" id="submitBtn"
+                    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Simpan
+                    User</button>
             </div>
         </form>
     </div>
@@ -130,20 +208,24 @@
     const userActive = document.getElementById('userActive');
     const passwordHint = document.getElementById('passwordHint');
     const passwordInput = form.password;
+    const activeRole = "{{ active_role or '' }}";
 
     function openModal(isEdit = false) {
         modal.classList.remove('hidden');
-        
+
         if (!isEdit) {
             modalTitle.textContent = 'Tambah User Baru';
             submitBtn.textContent = 'Simpan User';
             form.action = "{{ url_for('main.add_user') }}";
             form.reset();
             userActive.checked = true;
+            if (activeRole) {
+                form.role.value = activeRole;
+            }
             passwordInput.required = true;
             passwordHint.classList.add('hidden');
         }
-        
+
         setTimeout(() => {
             modal.classList.remove('opacity-0');
             modalContent.classList.remove('scale-95');
@@ -155,15 +237,15 @@
         openModal(true);
         modalTitle.textContent = 'Edit User';
         submitBtn.textContent = 'Update User';
-        
+
         const id = btn.dataset.id;
         form.action = `/user/edit/${id}`;
-        
+
         form.username.value = btn.dataset.username;
         form.name.value = btn.dataset.name;
         form.role.value = btn.dataset.role;
         userActive.checked = btn.dataset.active === 'true';
-        
+
         passwordInput.required = false;
         passwordHint.classList.remove('hidden');
     }
@@ -176,7 +258,7 @@
             modal.classList.add('hidden');
         }, 300);
     }
-    
+
     modal.addEventListener('click', (e) => {
         if (e.target === modal) closeModal();
     });

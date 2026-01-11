@@ -1,0 +1,240 @@
+{% extends "admin_base.html" %}
+
+{% block title %}{{ 'Edit Tiket' if ticket else 'Tambah Tiket Baru' }}{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <div class="flex items-center gap-3 mb-2">
+        <a href="{{ url_for('main.admin_tickets') }}" class="text-slate-400 hover:text-slate-600">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </a>
+        <h1 class="text-2xl font-bold">{{ 'Edit Tiket' if ticket else 'Tambah Tiket Baru' }}</h1>
+    </div>
+    <p class="text-slate-500">Isi detail informasi tiket dan skema harga dengan lengkap.</p>
+</div>
+
+<form method="POST" class="space-y-6">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <!-- BASIC INFO -->
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+            <span
+                class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center text-sm">1</span>
+            Informasi Dasar
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2">
+                <label class="block text-sm font-bold">Nama Tiket</label>
+                <input type="text" name="name" value="{{ ticket.name if ticket else '' }}" required
+                    class="w-full p-2.5 rounded-lg border dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="Contoh: Tiket Masuk Terusan">
+            </div>
+            <!-- Categories removed as per request -->
+            <div class="md:col-span-2 space-y-2">
+                <label class="block text-sm font-bold">Deskripsi Tiket</label>
+                <textarea name="desc" rows="3"
+                    class="w-full p-2.5 rounded-lg border dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="Jelaskan fasilitas yang didapat dari tiket ini...">{{ ticket.description if ticket else '' }}</textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRICING SECTIONS -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- DEWASA -->
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+            <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-indigo-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="8.5" cy="7" r="4"></circle>
+                    <polyline points="17 11 19 13 23 9"></polyline>
+                </svg>
+                Harga Dewasa
+            </h2>
+            <div class="space-y-4">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Reguler (Weekday)</label>
+                    <input type="number" name="price_adult" value="{{ ticket.price_adult if ticket else 0 }}"
+                        class="w-full p-2 rounded-lg border dark:border-slate-700 bg-transparent focus:border-indigo-500 outline-none">
+                </div>
+                <!-- Group Price Adult -->
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-purple-600 uppercase tracking-wider">Harga Group</label>
+                    <input type="number" name="price_group_adult"
+                        value="{{ ticket.price_group_adult if ticket else '' }}"
+                        class="w-full p-2 rounded-lg border dark:border-slate-700 bg-transparent focus:border-purple-500 outline-none"
+                        placeholder="Opsional">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-amber-600 uppercase tracking-wider">Reseller</label>
+                    <input type="number" name="price_reseller_adult"
+                        value="{{ ticket.price_reseller_adult if ticket else '' }}"
+                        class="w-full p-2 rounded-lg border dark:border-slate-700 bg-transparent focus:border-amber-500 outline-none"
+                        placeholder="Opsional">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Akhir Pekan
+                        (Weekend)</label>
+                    <input type="number" name="price_adult_weekend"
+                        value="{{ ticket.price_adult_weekend if ticket else '' }}"
+                        class="w-full p-2 rounded-lg border dark:border-slate-700 bg-transparent focus:border-indigo-500 outline-none"
+                        placeholder="Opsional">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">High Season</label>
+                    <input type="number" name="price_adult_highseason"
+                        value="{{ ticket.price_adult_highseason if ticket else '' }}"
+                        class="w-full p-2 rounded-lg border dark:border-slate-700 bg-transparent focus:border-indigo-500 outline-none"
+                        placeholder="Opsional">
+                </div>
+            </div>
+        </div>
+
+        <!-- ANAK-ANAK -->
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+            <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-rose-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="8.5" cy="7" r="4"></circle>
+                    <path d="M18 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path>
+                    <path d="M18 21v-2a3 3 0 0 0-3-3h-1"></path>
+                </svg>
+                Harga Anak
+            </h2>
+            <div class="space-y-4">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Reguler (Weekday)</label>
+                    <input type="number" name="price_child" value="{{ ticket.price_child if ticket else 0 }}"
+                        class="w-full p-2 rounded-lg border dark:border-slate-700 bg-transparent focus:border-rose-500 outline-none">
+                </div>
+                <!-- Group Price Child -->
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-purple-600 uppercase tracking-wider">Harga Group</label>
+                    <input type="number" name="price_group_child"
+                        value="{{ ticket.price_group_child if ticket else '' }}"
+                        class="w-full p-2 rounded-lg border dark:border-slate-700 bg-transparent focus:border-purple-500 outline-none"
+                        placeholder="Opsional">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-amber-600 uppercase tracking-wider">Reseller</label>
+                    <input type="number" name="price_reseller_child"
+                        value="{{ ticket.price_reseller_child if ticket else '' }}"
+                        class="w-full p-2 rounded-lg border dark:border-slate-700 bg-transparent focus:border-amber-500 outline-none"
+                        placeholder="Opsional">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Akhir Pekan
+                        (Weekend)</label>
+                    <input type="number" name="price_child_weekend"
+                        value="{{ ticket.price_child_weekend if ticket else '' }}"
+                        class="w-full p-2 rounded-lg border dark:border-slate-700 bg-transparent focus:border-rose-500 outline-none"
+                        placeholder="Opsional">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">High Season</label>
+                    <input type="number" name="price_child_highseason"
+                        value="{{ ticket.price_child_highseason if ticket else '' }}"
+                        class="w-full p-2 rounded-lg border dark:border-slate-700 bg-transparent focus:border-rose-500 outline-none"
+                        placeholder="Opsional">
+                </div>
+            </div>
+        </div>
+
+        <!-- UMUM (GENERAL) -->
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+            <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-emerald-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                Harga Umum
+            </h2>
+            <div class="space-y-4">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Reguler (Weekday)</label>
+                    <input type="number" name="price_umum" value="{{ ticket.price_umum if ticket else 0 }}"
+                        class="w-full p-2 rounded-lg border dark:border-slate-700 bg-transparent focus:border-emerald-500 outline-none">
+                </div>
+                <!-- Group Price Umum -->
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-purple-600 uppercase tracking-wider">Harga Group</label>
+                    <input type="number" name="price_group_umum" value="{{ ticket.price_group_umum if ticket else '' }}"
+                        class="w-full p-2 rounded-lg border dark:border-slate-700 bg-transparent focus:border-purple-500 outline-none"
+                        placeholder="Opsional">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-amber-600 uppercase tracking-wider">Reseller</label>
+                    <input type="number" name="price_reseller_umum"
+                        value="{{ ticket.price_reseller_umum if ticket else '' }}"
+                        class="w-full p-2 rounded-lg border dark:border-slate-700 bg-transparent focus:border-amber-500 outline-none"
+                        placeholder="Opsional">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Akhir Pekan
+                        (Weekend)</label>
+                    <input type="number" name="price_umum_weekend"
+                        value="{{ ticket.price_umum_weekend if ticket else '' }}"
+                        class="w-full p-2 rounded-lg border dark:border-slate-700 bg-transparent focus:border-emerald-500 outline-none"
+                        placeholder="Opsional">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">High Season</label>
+                    <input type="number" name="price_umum_highseason"
+                        value="{{ ticket.price_umum_highseason if ticket else '' }}"
+                        class="w-full p-2 rounded-lg border dark:border-slate-700 bg-transparent focus:border-emerald-500 outline-none"
+                        placeholder="Opsional">
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path
+                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                </path>
+            </svg>
+            Pengaturan Tambahan
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="p-4 rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+                <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" name="is_active" class="w-5 h-5 rounded text-blue-600" {{ 'checked' if not
+                        ticket or ticket.is_active }}>
+                    <div>
+                        <div class="font-bold text-sm">Tiket Aktif</div>
+                        <div class="text-xs text-slate-500">Tiket akan muncul dan dapat dibeli di halaman depan.</div>
+                    </div>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="flex items-center justify-end gap-3 pt-4 border-t dark:border-slate-700">
+        <a href="{{ url_for('main.admin_tickets') }}"
+            class="px-6 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+            Batal
+        </a>
+        <button type="submit"
+            class="px-8 py-2.5 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all">
+            {{ 'Simpan Perubahan' if ticket else 'Terbitkan Tiket' }}
+        </button>
+    </div>
+</form>
+{% endblock %}

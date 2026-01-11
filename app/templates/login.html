@@ -1,21 +1,25 @@
 {% extends "base.html" %}
+{% block header %}{% endblock %}
+{% block main_class %}min-h-screen flex items-center justify-center{% endblock %}
 
 {% block title %}Login Admin{% endblock %}
 
 {% block content %}
 <section class="w-full max-w-md">
     <div class="bg-white dark:bg-slate-900 border border-transparent rounded-2xl shadow-lg p-6">
-        <h1 class="text-2xl font-bold mb-6 text-center">Login Admin</h1>
+        <h1 class="text-2xl font-bold mb-6 text-center">Login</h1>
         <form method="POST" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div>
-                <label class="block text-sm font-medium mb-1">Username</label>
+                <label class="block text-sm font-medium mb-1">Email / No. Telp / Username</label>
                 <input type="text" name="username" class="w-full p-2 border rounded bg-transparent" required>
             </div>
             <div>
                 <label class="block text-sm font-medium mb-1">Password</label>
                 <input type="password" name="password" class="w-full p-2 border rounded bg-transparent" required>
             </div>
-            <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700">Login</button>
+            <button type="submit"
+                class="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700">Login</button>
         </form>
     </div>
 </section>

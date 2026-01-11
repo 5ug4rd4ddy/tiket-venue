@@ -1,0 +1,310 @@
+{% extends "reseller_base.html" %}
+
+{% block title %}Pesan Tiket{% endblock %}
+{% block header_title %}Pesan Tiket{% endblock %}
+
+{% block content %}
+<section class="max-w-2xl mx-auto px-4 py-12">
+
+    <!-- BALANCE INFO -->
+    <div class="mb-6 bg-indigo-600 rounded-2xl p-6 text-white shadow-lg">
+        <div class="flex justify-between items-start">
+            <div>
+                <div class="text-sm opacity-80 mb-1">Saldo Deposit Anda</div>
+                <div class="text-3xl font-bold">Rp {{ "{:,}".format(current_user.deposit_balance or 0) }}</div>
+            </div>
+            {% if current_user.deposit_expires_at %}
+            <div class="text-right">
+                <div class="text-xs opacity-80">Masa Aktif Hingga</div>
+                <div class="text-sm font-medium">{{ current_user.deposit_expires_at.strftime('%d %b %Y') }}</div>
+            </div>
+            {% endif %}
+        </div>
+        {% if settings and settings.min_reseller_deposit %}
+        <div class="mt-4 pt-4 border-t border-white/20 text-xs opacity-90">
+            <span class="font-bold text-yellow-300">INFO:</span> Minimal deposit untuk transaksi adalah <span
+                class="font-bold">Rp {{ "{:,}".format(settings.min_reseller_deposit) }}</span>.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- TANGGAL KUNJUNGAN -->
+    <div class="framer-card mb-4 bg-white dark:bg-slate-900 border border-transparent rounded-2xl shadow-lg p-6">
+        <label class="text-lg font-medium block mb-2">Tanggal kunjungan</label>
+        <input id="datePicker"
+            class="w-full p-3 rounded-lg border bg-transparent focus:outline-none focus:border-indigo-500 text-lg"
+            placeholder="Pilih tanggal" />
+    </div>
+
+    <!-- PILIH TIKET -->
+    <div class="framer-card mb-4 bg-white dark:bg-slate-900 border border-transparent rounded-2xl shadow-lg p-6">
+        <h3 class="text-lg font-medium mb-3">Pilih Tiket</h3>
+        {% for ticket in tickets %}
+        <div class="border rounded-lg p-4 mb-3">
+            <div class="font-bold mb-1">{{ ticket.name }}</div>
+            <div class="text-xs text-slate-500 mb-3">{{ ticket.description }}</div>
+
+            <!-- Dewasa -->
+            {% if (ticket.price_reseller_adult or ticket.price_adult or 0) > 0 %}
+            <div
+                class="flex justify-between items-center mb-3 pb-3 border-b border-dashed border-slate-200 dark:border-slate-700">
+                <div class="text-sm">
+                    <div class="font-medium">Dewasa</div>
+                    <div id="price-{{ ticket.slug }}_adult" class="font-bold text-blue-600">
+                        Rp {{ "{:,}".format(ticket.price_reseller_adult or ticket.price_adult or 0) }}
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button type="button"
+                        class="qty-circle w-10 h-10 rounded-full border-blue-600 flex items-center justify-center text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 font-bold"
+                        onclick="updateQty('{{ ticket.slug }}_adult', -1)">-</button>
+                    <span id="qty-{{ ticket.slug }}_adult" class="font-bold text-xl w-8 text-center">0</span>
+                    <button type="button"
+                        class="qty-circle w-10 h-10 rounded-full border-blue-600 flex items-center justify-center text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 font-bold"
+                        onclick="updateQty('{{ ticket.slug }}_adult', 1)">+</button>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Anak -->
+            {% if (ticket.price_reseller_child or ticket.price_child or 0) > 0 %}
+            <div
+                class="flex justify-between items-center mb-3 pb-3 border-b border-dashed border-slate-200 dark:border-slate-700">
+                <div class="text-sm">
+                    <div class="font-medium">Anak-anak</div>
+                    <div id="price-{{ ticket.slug }}_child" class="font-bold text-blue-600">
+                        Rp {{ "{:,}".format(ticket.price_reseller_child or ticket.price_child or 0) }}
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button type="button"
+                        class="qty-circle w-10 h-10 rounded-full border-blue-600 flex items-center justify-center text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 font-bold"
+                        onclick="updateQty('{{ ticket.slug }}_child', -1)">-</button>
+                    <span id="qty-{{ ticket.slug }}_child" class="font-bold text-xl w-8 text-center">0</span>
+                    <button type="button"
+                        class="qty-circle w-10 h-10 rounded-full border-blue-600 flex items-center justify-center text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 font-bold"
+                        onclick="updateQty('{{ ticket.slug }}_child', 1)">+</button>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Umum -->
+            {% if (ticket.price_reseller_umum or ticket.price_umum or 0) > 0 %}
+            <div class="flex justify-between items-center">
+                <div class="text-sm">
+                    <div class="font-medium">Umum</div>
+                    <div id="price-{{ ticket.slug }}_umum" class="font-bold text-blue-600">
+                        Rp {{ "{:,}".format(ticket.price_reseller_umum or ticket.price_umum or 0) }}
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button type="button"
+                        class="qty-circle w-10 h-10 rounded-full border-blue-600 flex items-center justify-center text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 font-bold"
+                        onclick="updateQty('{{ ticket.slug }}_umum', -1)">-</button>
+                    <span id="qty-{{ ticket.slug }}_umum" class="font-bold text-xl w-8 text-center">0</span>
+                    <button type="button"
+                        class="qty-circle w-10 h-10 rounded-full border-blue-600 flex items-center justify-center text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 font-bold"
+                        onclick="updateQty('{{ ticket.slug }}_umum', 1)">+</button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- TAMBAHAN (ADDONS) -->
+    {% if addons %}
+    <div class="framer-card mb-4 bg-white dark:bg-slate-900 border border-transparent rounded-2xl shadow-lg p-6">
+        <h3 class="text-lg font-medium mb-3">Extras / Add-ons</h3>
+        <div class="grid grid-cols-1 gap-3">
+            {% for addon in addons %}
+            <div class="border rounded-lg p-4">
+                <div class="flex justify-between items-center text-sm">
+                    <div class="flex-1">
+                        <div class="font-bold">{{ addon.name }}</div>
+                        <div class="text-xs text-slate-500">{{ addon.description }}</div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="text-right">
+                            <div class="font-bold text-blue-600">Rp {{ "{:,}".format(addon.price_reseller or addon.price
+                                or 0) }}</div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button type="button"
+                                class="qty-circle w-10 h-10 rounded-full border-blue-600 flex items-center justify-center text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 font-bold"
+                                onclick="updateAddonQty('{{ addon.slug }}', -1)">-</button>
+                            <span id="qty-addon-{{ addon.slug }}" class="font-bold text-xl w-8 text-center">0</span>
+                            <button type="button"
+                                class="qty-circle w-10 h-10 rounded-full border-blue-600 flex items-center justify-center text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 font-bold"
+                                onclick="updateAddonQty('{{ addon.slug }}', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- RINGKASAN -->
+    <div class="framer-card mb-8 bg-white dark:bg-slate-900 border border-transparent rounded-2xl shadow-lg p-6">
+        <h3 class="font-bold text-lg mb-4">Ringkasan Pesanan</h3>
+        <div class="space-y-3 text-sm text-slate-700 dark:text-slate-200">
+            <div class="flex justify-between"><span>Tanggal Kunjungan</span><span id="summaryDate"
+                    class="font-medium">-</span></div>
+            <div class="flex justify-between"><span>Item Tiket</span><span id="summaryTickets"
+                    class="font-medium">-</span></div>
+            <div class="flex justify-between"><span>Tambahan</span><span id="summaryAddons" class="font-medium">-</span>
+            </div>
+            <div
+                class="flex justify-between text-xl font-bold pt-4 border-t-2 border-slate-100 dark:border-slate-800 mt-4">
+                <span>Total Pembayaran</span>
+                <span id="summaryTotal" class="text-blue-600">Rp 0</span>
+            </div>
+            <div id="balanceError"
+                class="hidden mt-4 p-3 bg-red-50 text-red-700 rounded-lg text-xs font-medium border border-red-100 italic">
+                Saldo tidak mencukupi untuk pesanan ini.
+            </div>
+        </div>
+    </div>
+
+    <!-- CTA -->
+    <button id="checkoutBtn"
+        class="w-full py-4 rounded-2xl font-bold bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 text-lg disabled:opacity-50 disabled:cursor-not-allowed">
+        Konfirmasi Pesanan
+    </button>
+
+</section>
+
+<form id="checkoutForm" method="POST" action="{{ url_for('main.checkout') }}" class="hidden">
+    <input type="hidden" name="order_data" id="orderDataInput">
+</form>
+
+<script>
+    const ticketPrices = {};
+    const ticketNames = {};
+    {% for ticket in tickets %}
+    ticketNames["{{ ticket.slug }}"] = {{ ticket.name | tojson }};
+    ticketPrices["{{ ticket.slug }}_adult"] = {{ ticket.price_reseller_adult or ticket.price_adult or 0 }};
+    ticketPrices["{{ ticket.slug }}_child"] = {{ ticket.price_reseller_child or ticket.price_child or 0 }};
+    ticketPrices["{{ ticket.slug }}_umum"] = {{ ticket.price_reseller_umum or ticket.price_umum or 0 }};
+    {% endfor %}
+
+    const addonPrices = {};
+    const addonNames = {};
+    {% for addon in addons %}
+    addonNames["{{ addon.slug }}"] = {{ addon.name | tojson }};
+    addonPrices["{{ addon.slug }}"] = {{ addon.price_reseller or addon.price or 0 }};
+    {% endfor %}
+
+    let counts = {};
+    for (let key in ticketPrices) counts[key] = 0;
+
+    let addonCounts = {};
+    for (let slug in addonPrices) addonCounts[slug] = 0;
+
+    const currentBalance = {{ current_user.deposit_balance or 0 }};
+
+    function updateQty(slug, delta) {
+        counts[slug] = Math.max(0, counts[slug] + delta);
+        document.getElementById(`qty-${slug}`).innerText = counts[slug];
+        recalc();
+    }
+
+    function updateAddonQty(slug, delta) {
+        addonCounts[slug] = Math.max(0, addonCounts[slug] + delta);
+        document.getElementById(`qty-addon-${slug}`).innerText = addonCounts[slug];
+        recalc();
+    }
+
+    function recalc() {
+        let total = 0;
+        let ticketSummary = [];
+        let addonSummary = [];
+
+        for (let key in counts) {
+            if (counts[key] > 0) {
+                total += counts[key] * ticketPrices[key];
+
+                // Extract slug and variant from key (slug_variant)
+                // Variant is always the last part after split by underscore? 
+                // Wait, slug might contain underscore. 
+                // We know variants are _adult, _child, _umum.
+                let variant = '';
+                let slug = '';
+
+                if (key.endsWith('_adult')) { variant = 'Dws'; slug = key.substring(0, key.length - 6); }
+                else if (key.endsWith('_child')) { variant = 'Anak'; slug = key.substring(0, key.length - 6); }
+                else if (key.endsWith('_umum')) { variant = 'Umum'; slug = key.substring(0, key.length - 5); }
+                else { slug = key; variant = '?'; }
+
+                let name = ticketNames[slug] || slug;
+                ticketSummary.push(`${name} ${variant} (${counts[key]})`);
+            }
+        }
+
+        for (let slug in addonCounts) {
+            if (addonCounts[slug] > 0) {
+                total += addonCounts[slug] * addonPrices[slug];
+                let name = addonNames[slug] || slug;
+                addonSummary.push(`${name} (${addonCounts[slug]})`);
+            }
+        }
+
+        document.getElementById('summaryTickets').innerText = ticketSummary.length ? ticketSummary.join(', ') : '-';
+        document.getElementById('summaryAddons').innerText = addonSummary.length ? addonSummary.join(', ') : '-';
+        document.getElementById('summaryTotal').innerText = 'Rp ' + total.toLocaleString('id-ID');
+
+        // Balance Check
+        const checkoutBtn = document.getElementById('checkoutBtn');
+        const balanceError = document.getElementById('balanceError');
+
+        if (total > currentBalance) {
+            checkoutBtn.disabled = true;
+            balanceError.classList.remove('hidden');
+        } else {
+            checkoutBtn.disabled = false;
+            balanceError.classList.add('hidden');
+        }
+    }
+
+    const datePicker = flatpickr("#datePicker", {
+        minDate: "today",
+        dateFormat: "Y-m-d",
+        onChange: function (selectedDates, dateStr) {
+            document.getElementById('summaryDate').innerText = dateStr;
+            recalc();
+        }
+    });
+
+    document.getElementById('checkoutBtn').addEventListener('click', () => {
+        const date = document.getElementById('datePicker').value;
+        if (!date) return alert('Pilih tanggal kunjungan terlebih dahulu!');
+
+        let total = 0;
+        for (let s in counts) total += counts[s] * ticketPrices[s];
+
+        let selectedAddons = [];
+        for (let s in addonCounts) {
+            if (addonCounts[s] > 0) {
+                total += addonCounts[s] * addonPrices[s];
+                for (let i = 0; i < addonCounts[s]; i++) selectedAddons.push(s);
+            }
+        }
+
+        if (total === 0) return alert('Pilih minimal satu tiket atau addon!');
+        if (total > currentBalance) return alert('Saldo deposit tidak mencukupi!');
+
+        const payload = {
+            date: date,
+            type: 'reseller',
+            counts: counts,
+            addons: selectedAddons,
+            total: total
+        };
+
+        document.getElementById('orderDataInput').value = JSON.stringify(payload);
+        document.getElementById('checkoutForm').submit();
+    });
+</script>
+{% endblock %}

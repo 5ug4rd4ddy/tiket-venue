@@ -4,18 +4,21 @@
 
 {% block content %}
 <section class="w-[95%] max-w-3xl mx-auto">
-    
+
     <!-- HERO IMAGE -->
     {% if site.hero_image_url %}
     <div class="rounded-2xl overflow-hidden mb-4 shadow-md relative group">
         {% if site.hero_image_url.startswith('http') %}
-        <img src="{{ site.hero_image_url }}" alt="hero" class="w-full h-44 object-cover sm:h-64 transition-transform duration-700 group-hover:scale-105" />
+        <img src="{{ site.hero_image_url }}" alt="hero"
+            class="w-full h-44 object-cover sm:h-64 transition-transform duration-700 group-hover:scale-105" />
         {% else %}
-        <img src="{{ url_for('static', filename='uploads/' + site.hero_image_url) }}" alt="hero" class="w-full h-44 object-cover sm:h-64 transition-transform duration-700 group-hover:scale-105" />
+        <img src="{{ url_for('static', filename='uploads/' + site.hero_image_url) }}" alt="hero"
+            class="w-full h-44 object-cover sm:h-64 transition-transform duration-700 group-hover:scale-105" />
         {% endif %}
     </div>
     {% else %}
-    <div class="rounded-2xl overflow-hidden mb-4 shadow-md relative group bg-gradient-to-r from-blue-500 to-indigo-600 h-44 sm:h-64 flex items-center justify-center">
+    <div
+        class="rounded-2xl overflow-hidden mb-4 shadow-md relative group bg-gradient-to-r from-blue-500 to-indigo-600 h-44 sm:h-64 flex items-center justify-center">
         <h1 class="text-3xl font-bold text-white tracking-wider">{{ site.park_name }}</h1>
     </div>
     {% endif %}
@@ -24,13 +27,16 @@
     <div class="framer-card mb-4 bg-white dark:bg-slate-900 border border-transparent rounded-2xl shadow-lg p-6">
         <div class="flex gap-4 items-start">
             {% if site.logo_url %}
-                {% if site.logo_url.startswith('http') %}
-                <img src="{{ site.logo_url }}" alt="logo" class="w-16 h-16 rounded-lg object-cover bg-white"/>
-                {% else %}
-                <img src="{{ url_for('static', filename='uploads/' + site.logo_url) }}" alt="logo" class="w-16 h-16 rounded-lg object-cover bg-white"/>
-                {% endif %}
+            {% if site.logo_url.startswith('http') %}
+            <img src="{{ site.logo_url }}" alt="logo" class="w-16 h-16 rounded-lg object-cover bg-white" />
             {% else %}
-            <div class="w-16 h-16 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-2xl">W</div>
+            <img src="{{ url_for('static', filename='uploads/' + site.logo_url) }}" alt="logo"
+                class="w-16 h-16 rounded-lg object-cover bg-white" />
+            {% endif %}
+            {% else %}
+            <div
+                class="w-16 h-16 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-2xl">
+                W</div>
             {% endif %}
             <div>
                 <div class="text-xl font-semibold">{{ site.park_name }}</div>
@@ -43,20 +49,22 @@
     <!-- 1) Tipe kunjungan -->
     <div class="framer-card mb-4 bg-white dark:bg-slate-900 border border-transparent rounded-2xl shadow-lg p-6">
         <div class="text-lg font-medium mb-2">Tipe kunjungan</div>
-        <div class="flex gap-3">
-            <label id="personalLabel" class="visit-type flex-1 p-3 rounded-lg border cursor-pointer text-center selected transition-all duration-300">
+        <div class="flex flex-wrap gap-3">
+            <label id="personalLabel"
+                class="visit-type flex-1 min-w-[120px] p-3 rounded-lg border cursor-pointer text-center selected transition-all duration-300">
                 <input id="visitPersonal" type="radio" name="visitType" value="personal" checked class="hidden" />
                 <div class="font-medium">Personal</div>
                 <div class="text-xs text-slate-500 dark:text-slate-400">Satu pengunjung</div>
             </label>
-            <label id="groupLabel" class="visit-type flex-1 p-3 rounded-lg border cursor-pointer text-center transition-all duration-300">
+            <label id="groupLabel"
+                class="visit-type flex-1 min-w-[120px] p-3 rounded-lg border cursor-pointer text-center transition-all duration-300">
                 <input id="visitGroup" type="radio" name="visitType" value="group" class="hidden" />
                 <div class="font-medium">Group</div>
                 <div class="text-xs text-slate-500 dark:text-slate-400">Minimal 10 pengunjung</div>
             </label>
         </div>
 
-        <!-- Group form (removed from here, moved to checkout) -->
+        <!-- Group form -->
         <div id="groupForm" class="mt-4 hidden">
             <div class="p-3 bg-blue-50 text-blue-700 rounded-lg text-sm">
                 Detail group akan diisi pada halaman selanjutnya.
@@ -67,42 +75,95 @@
     <!-- 2) Tanggal kunjungan -->
     <div class="framer-card mb-4 bg-white dark:bg-slate-900 border border-transparent rounded-2xl shadow-lg p-6">
         <label class="text-lg font-medium block mb-2">Tanggal kunjungan</label>
-        <input id="datePicker" class="w-full p-3 rounded-lg border bg-transparent focus:outline-none focus:border-indigo-500" placeholder="Pilih tanggal" />
+        <input id="datePicker"
+            class="w-full p-3 rounded-lg border bg-transparent focus:outline-none focus:border-indigo-500"
+            placeholder="Pilih tanggal" />
     </div>
 
     <!-- 3) Pilih tiket -->
     <div class="framer-card mb-4 bg-white dark:bg-slate-900 border border-transparent rounded-2xl shadow-lg p-6">
         <h3 class="text-lg font-medium mb-3">Pilih Tiket</h3>
         {% for ticket in tickets %}
-        <div class="border rounded-lg p-4 mb-3 ticket-card" data-category="{{ ticket.category or 'personal' }}">
+        {% set categories = [] %}
+        {% if (ticket.price_adult or 0) > 0 or (ticket.price_child or 0) > 0 or (ticket.price_umum or 0) > 0 %}
+        {% set _ = categories.append('personal') %}
+        {% endif %}
+        {% if (ticket.price_group_adult or 0) > 0 or (ticket.price_group_child or 0) > 0 or (ticket.price_group_umum or
+        0) >
+        0 %}
+        {% set _ = categories.append('group') %}
+        {% endif %}
+        <div class="border rounded-lg p-4 mb-3 ticket-card" data-category="{{ categories|join(',') }}">
             <div class="font-bold mb-2">{{ ticket.name }}</div>
             <div class="text-xs text-slate-500 mb-3">{{ ticket.description }}</div>
-            
+
             <!-- Dewasa -->
-            <div class="flex justify-between items-center mb-3 pb-3 border-b border-dashed border-slate-200 dark:border-slate-700">
+            {% if (ticket.price_adult or 0) > 0 or (ticket.price_adult_weekend or 0) > 0 or
+            (ticket.price_adult_highseason or 0) > 0 %}
+            <div
+                class="flex justify-between items-center mb-3 pb-3 border-b border-dashed border-slate-200 dark:border-slate-700">
                 <div class="text-sm">
                     <div class="font-medium">Dewasa</div>
-                    <div id="price-{{ ticket.slug }}_adult" class="font-semibold text-indigo-600">Rp {{ "{:,}".format(ticket.price_adult) }}</div>
+                    <div id="price-{{ ticket.slug }}_adult" class="font-semibold text-indigo-600">
+                        Rp {{ "{:,}".format(ticket.price_adult or 0) }}
+                    </div>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button class="qty-circle w-8 h-8 rounded-full border-indigo-600 flex items-center justify-center text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30" onclick="updateQty('{{ ticket.slug }}_adult', -1)">-</button>
+                    <button type="button"
+                        class="qty-circle w-8 h-8 rounded-full border-indigo-600 flex items-center justify-center text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
+                        onclick="updateQty('{{ ticket.slug }}_adult', -1)">-</button>
                     <span id="qty-{{ ticket.slug }}_adult" class="font-bold text-lg w-6 text-center">0</span>
-                    <button class="qty-circle w-8 h-8 rounded-full border-indigo-600 flex items-center justify-center text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30" onclick="updateQty('{{ ticket.slug }}_adult', 1)">+</button>
+                    <button type="button"
+                        class="qty-circle w-8 h-8 rounded-full border-indigo-600 flex items-center justify-center text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
+                        onclick="updateQty('{{ ticket.slug }}_adult', 1)">+</button>
                 </div>
             </div>
+            {% endif %}
 
             <!-- Anak -->
-            <div class="flex justify-between items-center">
+            {% if (ticket.price_child or 0) > 0 or (ticket.price_child_weekend or 0) > 0 or
+            (ticket.price_child_highseason or 0) > 0 %}
+            <div
+                class="flex justify-between items-center mb-3 pb-3 border-b border-dashed border-slate-200 dark:border-slate-700">
                 <div class="text-sm">
                     <div class="font-medium">Anak-anak</div>
-                    <div id="price-{{ ticket.slug }}_child" class="font-semibold text-indigo-600">Rp {{ "{:,}".format(ticket.price_child) }}</div>
+                    <div id="price-{{ ticket.slug }}_child" class="font-semibold text-indigo-600">
+                        Rp {{ "{:,}".format(ticket.price_child or 0) }}
+                    </div>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button class="qty-circle w-8 h-8 rounded-full border-indigo-600 flex items-center justify-center text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30" onclick="updateQty('{{ ticket.slug }}_child', -1)">-</button>
+                    <button type="button"
+                        class="qty-circle w-8 h-8 rounded-full border-indigo-600 flex items-center justify-center text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
+                        onclick="updateQty('{{ ticket.slug }}_child', -1)">-</button>
                     <span id="qty-{{ ticket.slug }}_child" class="font-bold text-lg w-6 text-center">0</span>
-                    <button class="qty-circle w-8 h-8 rounded-full border-indigo-600 flex items-center justify-center text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30" onclick="updateQty('{{ ticket.slug }}_child', 1)">+</button>
+                    <button type="button"
+                        class="qty-circle w-8 h-8 rounded-full border-indigo-600 flex items-center justify-center text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
+                        onclick="updateQty('{{ ticket.slug }}_child', 1)">+</button>
                 </div>
             </div>
+            {% endif %}
+
+            <!-- Umum -->
+            {% if (ticket.price_umum or 0) > 0 or (ticket.price_umum_weekend or 0) > 0 or (ticket.price_umum_highseason
+            or 0) > 0 %}
+            <div class="flex justify-between items-center">
+                <div class="text-sm">
+                    <div class="font-medium">Umum</div>
+                    <div id="price-{{ ticket.slug }}_umum" class="font-semibold text-indigo-600">
+                        Rp {{ "{:,}".format(ticket.price_umum or 0) }}
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button type="button"
+                        class="qty-circle w-8 h-8 rounded-full border-indigo-600 flex items-center justify-center text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
+                        onclick="updateQty('{{ ticket.slug }}_umum', -1)">-</button>
+                    <span id="qty-{{ ticket.slug }}_umum" class="font-bold text-lg w-6 text-center">0</span>
+                    <button type="button"
+                        class="qty-circle w-8 h-8 rounded-full border-indigo-600 flex items-center justify-center text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
+                        onclick="updateQty('{{ ticket.slug }}_umum', 1)">+</button>
+                </div>
+            </div>
+            {% endif %}
         </div>
         {% else %}
         <div class="text-center p-8 text-slate-500">
@@ -117,16 +178,29 @@
         <h3 class="text-lg font-medium mb-3">Tambahan</h3>
         <div class="grid grid-cols-1 gap-3">
             {% for addon in addons %}
-            <button type="button" class="addon-card w-full border rounded-lg p-3 text-left transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-800" 
-                    data-slug="{{ addon.slug }}" data-price="{{ addon.price }}" data-category="{{ addon.category or 'personal' }}" data-selected="false" onclick="toggleAddon(this)">
+            <div class="addon-card border rounded-lg p-4 mb-1" data-category="{{ addon.category or 'personal' }}">
                 <div class="flex justify-between items-center">
-                    <div>
-                        <div class="font-medium">{{ addon.name }}</div>
+                    <div class="flex-1">
+                        <div class="font-bold">{{ addon.name }}</div>
                         <div class="text-xs text-slate-500 dark:text-slate-400">{{ addon.description }}</div>
                     </div>
-                    <div class="text-sm font-semibold">Rp {{ "{:,}".format(addon.price) }}</div>
+                    <div class="flex items-center gap-4">
+                        <div class="text-right">
+                            <div id="price-addon-{{ addon.slug }}" class="font-semibold text-indigo-600">Rp {{
+                                "{:,}".format(addon.price) }}</div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button type="button"
+                                class="qty-circle w-8 h-8 rounded-full border-indigo-600 flex items-center justify-center text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
+                                onclick="updateAddonQty('{{ addon.slug }}', -1)">-</button>
+                            <span id="qty-addon-{{ addon.slug }}" class="font-bold text-lg w-6 text-center">0</span>
+                            <button type="button"
+                                class="qty-circle w-8 h-8 rounded-full border-indigo-600 flex items-center justify-center text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
+                                onclick="updateAddonQty('{{ addon.slug }}', 1)">+</button>
+                        </div>
+                    </div>
                 </div>
-            </button>
+            </div>
             {% endfor %}
         </div>
     </div>
@@ -140,13 +214,15 @@
             <div class="flex justify-between"><span>Tanggal</span><span id="summaryDate">-</span></div>
             <div class="flex justify-between"><span>Tiket</span><span id="summaryTickets">-</span></div>
             <div class="flex justify-between"><span>Tambahan</span><span id="summaryAddons">-</span></div>
-            <div class="flex justify-between text-base font-semibold pt-2 border-t mt-2"><span>Total</span><span id="summaryTotal">Rp 0</span></div>
+            <div class="flex justify-between text-base font-semibold pt-2 border-t mt-2"><span>Total</span><span
+                    id="summaryTotal">Rp 0</span></div>
         </div>
     </div>
 
     <!-- 6) Button pesan (desktop only) -->
     <div class="mb-12 md:mb-8 hidden md:block">
-        <button id="checkoutBtnDesktop" class="w-full py-3 rounded-xl font-semibold bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 transition-colors">
+        <button id="checkoutBtnDesktop"
+            class="w-full py-3 rounded-xl font-semibold bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 transition-colors">
             Pesan Tiket
         </button>
     </div>
@@ -154,13 +230,15 @@
 </section>
 
 <!-- Mobile fixed CTA -->
-<div class="fixed bottom-0 left-0 w-full md:hidden z-50 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+<div
+    class="fixed bottom-0 left-0 w-full md:hidden z-50 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
     <div class="p-4 flex items-center justify-between gap-4 max-w-3xl mx-auto">
         <div>
             <div class="text-sm text-slate-500 dark:text-slate-400">Total</div>
             <div class="font-semibold text-lg" id="bottomTotal">Rp 0</div>
         </div>
-        <button id="checkoutBtnMobile" class="py-3 px-6 rounded-xl font-semibold bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 transition-colors">
+        <button id="checkoutBtnMobile"
+            class="py-3 px-6 rounded-xl font-semibold bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 transition-colors">
             Pesan
         </button>
     </div>
@@ -172,102 +250,159 @@
     // Style constants
     const SELECTED_STYLE = "border-indigo-600 ring-1 ring-indigo-600 bg-indigo-50 dark:bg-indigo-900/20";
     const DESELECTED_STYLE = "border-slate-200 hover:bg-slate-50";
-    const MIN_GROUP_ORDER = {{ min_group_order }};
+    const MIN_GROUP_ORDER = {{ min_group_order | default (10) }};
 
-    const ticketPrices = {};
-    {% for ticket in tickets %}
-    ticketPrices["{{ ticket.slug }}_adult"] = {{ ticket.price_adult }};
-    ticketPrices["{{ ticket.slug }}_child"] = {{ ticket.price_child }};
-    {% endfor %}
-    
+    const isReseller = false;
+
+    const ticketBasePrices = {
+        {% for ticket in tickets %}
+        "{{ ticket.slug }}_adult": {
+            "personal": {
+                "regular": {{ ticket.price_adult or 0 }},
+                "weekend": {{ ticket.price_adult_weekend or ticket.price_adult or 0 }},
+                "high": {{ ticket.price_adult_highseason or ticket.price_adult_weekend or ticket.price_adult or 0 }}
+            },
+            "group": {
+                "regular": {{ ticket.price_group_adult or 0 }},
+                "weekend": {{ ticket.price_group_adult_weekend or ticket.price_group_adult or 0 }},
+                "high": {{ ticket.price_group_adult_highseason or ticket.price_group_adult_weekend or ticket.price_group_adult or 0 }}
+            }
+        },
+        "{{ ticket.slug }}_child": {
+            "personal": {
+                "regular": {{ ticket.price_child or 0 }},
+                "weekend": {{ ticket.price_child_weekend or ticket.price_child or 0 }},
+                "high": {{ ticket.price_child_highseason or ticket.price_child_weekend or ticket.price_child or 0 }}
+            },
+            "group": {
+                "regular": {{ ticket.price_group_child or 0 }},
+                "weekend": {{ ticket.price_group_child_weekend or ticket.price_group_child or 0 }},
+                "high": {{ ticket.price_group_child_highseason or ticket.price_group_child_weekend or ticket.price_group_child or 0 }}
+            }
+        },
+        "{{ ticket.slug }}_umum": {
+            "personal": {
+                "regular": {{ ticket.price_umum or 0 }},
+                "weekend": {{ ticket.price_umum_weekend or ticket.price_umum or 0 }},
+                "high": {{ ticket.price_umum_highseason or ticket.price_umum_weekend or ticket.price_umum or 0 }}
+            },
+            "group": {
+                "regular": {{ ticket.price_group_umum or 0 }},
+                "weekend": {{ ticket.price_group_umum_weekend or ticket.price_group_umum or 0 }},
+                "high": {{ ticket.price_group_umum_highseason or ticket.price_group_umum_weekend or ticket.price_group_umum or 0 }}
+            }
+        },
+        {% endfor %}
+    };
+
+    let currentTicketPrices = {}; // This will hold the prices for the selected date (regular, weekend, high)
+
     let counts = {};
-    for (let key in ticketPrices) counts[key] = 0;
-    
-    let selectedAddons = new Set();
+    {% for ticket in tickets %}
+    counts["{{ ticket.slug }}_adult"] = 0;
+    counts["{{ ticket.slug }}_child"] = 0;
+    counts["{{ ticket.slug }}_umum"] = 0;
+    {% endfor %}
+
+    let addonCounts = {};
     const addonPrices = {};
     {% for addon in addons %}
-    addonPrices["{{ addon.slug }}"] = {{ addon.price }};
+    addonPrices["{{ addon.slug }}"] = {{ addon.price | default (0) }};
+    addonCounts["{{ addon.slug }}"] = 0;
     {% endfor %}
 
     // --- VISIT TYPE LOGIC ---
-    const visitPersonal = document.getElementById('visitPersonal');
-    const visitGroup = document.getElementById('visitGroup');
-    const personalLabel = document.getElementById('personalLabel');
-    const groupLabel = document.getElementById('groupLabel');
-    const groupForm = document.getElementById('groupForm');
-    const summaryType = document.getElementById('summaryType');
+    let type = 'personal'; // Track current visit type
 
     function updateVisitType() {
-        const isPersonal = visitPersonal.checked;
-        
-        if(isPersonal) {
+        // Toggle UI
+        const personalLabel = document.getElementById('personalLabel');
+        const groupLabel = document.getElementById('groupLabel');
+        const visitPersonal = document.getElementById('visitPersonal');
+        const visitGroup = document.getElementById('visitGroup');
+        const summaryType = document.getElementById('summaryType');
+        const groupForm = document.getElementById('groupForm');
+
+        // Update global type
+        type = visitPersonal.checked ? 'personal' : 'group';
+
+        // Reset labels
+        [personalLabel, groupLabel].forEach(label => {
+            if (label) label.classList.remove('selected', 'border-indigo-600', 'ring-1', 'ring-indigo-600');
+        });
+
+        if (type === 'personal') {
             personalLabel.classList.add('selected', 'border-indigo-600', 'ring-1', 'ring-indigo-600');
-            groupLabel.classList.remove('selected', 'border-indigo-600', 'ring-1', 'ring-indigo-600');
             groupForm.classList.add('hidden');
             summaryType.innerText = "Personal";
-        } else {
+        } else if (type === 'group') {
             groupLabel.classList.add('selected', 'border-indigo-600', 'ring-1', 'ring-indigo-600');
-            personalLabel.classList.remove('selected', 'border-indigo-600', 'ring-1', 'ring-indigo-600');
             groupForm.classList.remove('hidden');
             summaryType.innerText = "Group";
         }
 
-        // Filter Tickets
-        document.querySelectorAll('.ticket-card').forEach(card => {
-            const cat = card.getAttribute('data-category');
-            if (isPersonal) {
-                if (cat === 'group') card.classList.add('hidden');
-                else card.classList.remove('hidden');
+        // Filter Tickets & Addons
+        document.querySelectorAll('.ticket-card, .addon-card').forEach(card => {
+            const categories = (card.getAttribute('data-category') || 'personal').split(',');
+            if (categories.includes(type)) {
+                card.classList.remove('hidden');
             } else {
-                if (cat === 'personal') card.classList.add('hidden');
-                else card.classList.remove('hidden');
+                card.classList.add('hidden');
             }
         });
 
-        // Filter Addons
-        document.querySelectorAll('.addon-card').forEach(card => {
-            const cat = card.getAttribute('data-category');
-            if (isPersonal) {
-                if (cat === 'group') card.classList.add('hidden');
-                else card.classList.remove('hidden');
-            } else {
-                if (cat === 'personal') card.classList.add('hidden');
-                else card.classList.remove('hidden');
+        // Update Prices logic
+        const dateStr = document.getElementById('datePicker').value;
+        if (dateStr) {
+            checkDate(dateStr);
+        } else {
+            // Default to regular prices for the new type
+            const visitTypeKey = type;
+            for (let slug in ticketBasePrices) {
+                const priceTypeObj = ticketBasePrices[slug][visitTypeKey];
+                if (priceTypeObj) {
+                    currentTicketPrices[slug] = priceTypeObj['regular'] || 0;
+                } else {
+                    currentTicketPrices[slug] = 0;
+                }
             }
-        });
-        
-        // Reset selections when switching to avoid invalid state
+            updatePricesDisplay();
+        }
+
+        // Reset selections to avoid cross-type totals
         resetSelections();
     }
-    
+
+    function updatePricesDisplay() {
+        const prices = currentTicketPrices; // Use currentTicketPrices
+        const aPrices = addonPrices;
+
+        for (let key in prices) {
+            const el = document.getElementById(`price-${key}`);
+            if (el) el.innerText = 'Rp ' + prices[key].toLocaleString('id-ID');
+        }
+        for (let slug in aPrices) {
+            const el = document.getElementById(`price-addon-${slug}`);
+            if (el) el.innerText = 'Rp ' + aPrices[slug].toLocaleString('id-ID');
+        }
+    }
+
     function resetSelections() {
-        // Reset ticket counts
         for (let key in counts) {
             counts[key] = 0;
             const el = document.getElementById(`qty-${key}`);
-            if(el) el.innerText = '0';
+            if (el) el.innerText = '0';
         }
-        
-        // Reset addons
-        selectedAddons.clear();
-        document.querySelectorAll('.addon-card').forEach(btn => {
-            btn.setAttribute('data-selected', 'false');
-            btn.classList.remove('border-indigo-600', 'ring-1', 'ring-indigo-600', 'bg-indigo-50', 'dark:bg-indigo-900/20');
-            btn.classList.add('border-slate-200');
-        });
-        
+        for (let slug in addonCounts) {
+            addonCounts[slug] = 0;
+            const el = document.getElementById(`qty-addon-${slug}`);
+            if (el) el.innerText = '0';
+        }
         recalc();
     }
 
-    personalLabel.addEventListener('click', () => {
-        visitPersonal.checked = true;
-        updateVisitType();
-    });
-
-    groupLabel.addEventListener('click', () => {
-        visitGroup.checked = true;
-        updateVisitType();
-    });
+    if (personalLabel) personalLabel.addEventListener('click', () => { if (visitPersonal) visitPersonal.checked = true; updateVisitType(); });
+    if (groupLabel) groupLabel.addEventListener('click', () => { if (visitGroup) visitGroup.checked = true; updateVisitType(); });
 
     // --- TICKET LOGIC ---
     function updateQty(slug, delta) {
@@ -277,21 +412,9 @@
     }
 
     // --- ADDON LOGIC ---
-    function toggleAddon(btn) {
-        const slug = btn.getAttribute('data-slug');
-        const isSelected = btn.getAttribute('data-selected') === 'true';
-        
-        if (!isSelected) {
-            btn.setAttribute('data-selected', 'true');
-            btn.classList.add('border-indigo-600', 'ring-1', 'ring-indigo-600', 'bg-indigo-50', 'dark:bg-indigo-900/20');
-            btn.classList.remove('border-slate-200');
-            selectedAddons.add(slug);
-        } else {
-            btn.setAttribute('data-selected', 'false');
-            btn.classList.remove('border-indigo-600', 'ring-1', 'ring-indigo-600', 'bg-indigo-50', 'dark:bg-indigo-900/20');
-            btn.classList.add('border-slate-200');
-            selectedAddons.delete(slug);
-        }
+    function updateAddonQty(slug, delta) {
+        addonCounts[slug] = Math.max(0, addonCounts[slug] + delta);
+        document.getElementById(`qty-addon-${slug}`).innerText = addonCounts[slug];
         recalc();
     }
 
@@ -301,44 +424,48 @@
         let ticketSummary = [];
         let addonSummary = [];
 
+        const prices = currentTicketPrices; // Use currentTicketPrices
+        const aPrices = addonPrices;
+
         // Tickets
         for (let slug in counts) {
             if (counts[slug] > 0) {
-                total += counts[slug] * ticketPrices[slug];
-                ticketSummary.push(`${slug.replace(/_/g, ' ')} (${counts[slug]})`);
+                total += counts[slug] * prices[slug];
+                ticketSummary.push(`${slug.replace(/_/g, ' ').replace('adult', 'Dws').replace('child', 'Anak').replace('umum', 'Umum')} (${counts[slug]})`);
             }
         }
 
         // Addons
-        selectedAddons.forEach(slug => {
-            total += addonPrices[slug];
-            addonSummary.push(slug.replace(/_/g, ' '));
-        });
+        for (let slug in addonCounts) {
+            if (addonCounts[slug] > 0) {
+                total += addonCounts[slug] * aPrices[slug];
+                addonSummary.push(`${slug.replace(/_/g, ' ')} (${addonCounts[slug]})`);
+            }
+        }
 
         // Update Summary UI
         document.getElementById('summaryTickets').innerText = ticketSummary.length ? ticketSummary.join(', ') : '-';
         document.getElementById('summaryAddons').innerText = addonSummary.length ? addonSummary.join(', ') : '-';
-        
+
         const formattedTotal = 'Rp ' + total.toLocaleString('id-ID');
         document.getElementById('summaryTotal').innerText = formattedTotal;
         document.getElementById('bottomTotal').innerText = formattedTotal;
     }
 
     // --- FLATPICKR ---
-    const datePicker = flatpickr("#datePicker", { 
-        minDate: "today", 
+    const datePicker = flatpickr("#datePicker", {
+        minDate: "today",
         dateFormat: "Y-m-d",
-        onChange: function(selectedDates, dateStr) {
+        onChange: function (selectedDates, dateStr) {
             checkDate(dateStr);
         }
     });
 
     async function checkDate(dateStr) {
         try {
-            // Show loading or disable inputs if needed
             const res = await fetch(`/api/check-date?date=${dateStr}`);
             const data = await res.json();
-            
+
             if (data.status === 'success') {
                 if (data.type === 'closed') {
                     alert('Maaf, wahana tutup pada tanggal yang dipilih. Silakan pilih tanggal lain.');
@@ -346,62 +473,76 @@
                     document.getElementById('summaryDate').innerText = '-';
                     return;
                 }
-                
-                // Update prices in global object
-                for (let key in data.prices) {
-                    ticketPrices[key] = data.prices[key];
-                    // Update UI
-                    const el = document.getElementById(`price-${key}`);
-                    if (el) {
-                        el.innerText = 'Rp ' + data.prices[key].toLocaleString('id-ID');
+
+                // data.type is 'regular', 'weekend', or 'high_season'
+                // Our ticketBasePrices keys are 'regular', 'weekend', 'high'
+                const priceKey = data.type === 'high_season' ? 'high' : data.type;
+                const visitTypeKey = type || 'personal';
+
+                // Update currentTicketPrices from ticketBasePrices
+                for (let slug in ticketBasePrices) {
+                    const priceTypeObj = ticketBasePrices[slug][visitTypeKey];
+                    // Fallback to regular personal if group undefined? No, fallback to 0.
+                    // Actually our object layout is robust.
+                    if (priceTypeObj) {
+                        currentTicketPrices[slug] = priceTypeObj[priceKey] || priceTypeObj['regular'] || 0;
+                    } else {
+                        currentTicketPrices[slug] = 0;
                     }
                 }
-                
-                // Update Summary Date text with Type
-                const typeName = {
-                    'regular': 'Reguler',
-                    'weekend': 'Akhir Pekan',
-                    'high_season': 'High Season'
-                };
-                document.getElementById('summaryDate').innerText = `${dateStr} (${typeName[data.type]})`;
-                
+
+                document.getElementById('summaryDate').innerText = `${dateStr}`;
+
+                updatePricesDisplay();
                 recalc();
-                
+
             } else {
                 console.error(data.message);
             }
         } catch (e) {
             console.error('Error checking date:', e);
-            alert('Gagal memeriksa ketersediaan tanggal. Periksa koneksi internet Anda.');
         }
     }
 
     // --- CHECKOUT ---
     function doCheckout() {
         const date = document.getElementById('datePicker').value;
-        if(!date) return alert('Pilih tanggal kunjungan terlebih dahulu!');
+        if (!date) return alert('Pilih tanggal kunjungan terlebih dahulu!');
 
         let total = 0;
         let totalTickets = 0;
+
+        const prices = currentTicketPrices;
+        const aPrices = addonPrices;
+
         for (let s in counts) {
-            total += counts[s] * ticketPrices[s];
+            total += counts[s] * prices[s];
             totalTickets += counts[s];
         }
-        selectedAddons.forEach(s => total += addonPrices[s]);
+
+        let selectedAddonsList = [];
+        for (let s in addonCounts) {
+            if (addonCounts[s] > 0) {
+                total += addonCounts[s] * aPrices[s];
+                // We might need to handle multiplicity in payload
+                for (let i = 0; i < addonCounts[s]; i++) {
+                    selectedAddonsList.push(s);
+                }
+            }
+        }
 
         if (total === 0) return alert('Pilih minimal satu tiket atau addon!');
 
-        const isGroup = visitGroup.checked;
-        if (isGroup) {
+        if (type === 'group') {
             if (totalTickets < MIN_GROUP_ORDER) return alert(`Untuk pesanan Group, minimal pemesanan adalah ${MIN_GROUP_ORDER} tiket!`);
         }
 
         const payload = {
             date: date,
-            type: isGroup ? 'group' : 'personal',
-            group_details: null, // Will be filled in checkout
+            type: type,
+            group_details: null,
             counts: counts,
-            addons: Array.from(selectedAddons),
+            addons: selectedAddonsList,
             total: total
         };
 
@@ -409,14 +550,15 @@
         document.getElementById('checkoutForm').submit();
     }
 
-    document.getElementById('checkoutBtnDesktop').addEventListener('click', doCheckout);
-    document.getElementById('checkoutBtnMobile').addEventListener('click', doCheckout);
+    if (document.getElementById('checkoutBtnDesktop')) document.getElementById('checkoutBtnDesktop').addEventListener('click', doCheckout);
+    if (document.getElementById('checkoutBtnMobile')) document.getElementById('checkoutBtnMobile').addEventListener('click', doCheckout);
 
     // Initial state
     updateVisitType();
 </script>
 
 <form id="checkoutForm" method="POST" action="{{ url_for('main.checkout') }}" class="hidden">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <input type="hidden" name="order_data" id="orderDataInput">
 </form>
 {% endblock %}

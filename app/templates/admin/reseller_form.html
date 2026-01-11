@@ -1,0 +1,219 @@
+{% extends "admin_base.html" %}
+{% block title %}{{ 'Edit' if user else 'Tambah' }} Reseller{% endblock %}
+
+{% block content %}
+<div>
+    <div class="flex items-center gap-4 mb-6">
+        <a href="{{ url_for('main.admin_resellers') }}"
+            class="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </a>
+        <div>
+            <h1 class="text-2xl font-bold">{{ 'Edit' if user else 'Tambah' }} Reseller</h1>
+            <p class="text-slate-500">Lengkapi data reseller di bawah ini.</p>
+        </div>
+    </div>
+
+    <div
+        class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden p-8">
+        <form id="profileForm"
+                        action="{{ url_for('main.admin_edit_reseller', id=user.id) if user else url_for('main.admin_add_reseller') }}"
+                        method="POST" class="space-y-8">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            {% if not user %}
+            <!-- Info Alert for New Resellers -->
+            <div
+                class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg flex items-start gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="text-blue-500 mt-0.5">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                <div>
+                    <h3 class="text-sm font-bold text-blue-900 dark:text-blue-300">Pendaftaran Otomatis</h3>
+                    <p class="text-xs text-blue-700 dark:text-blue-400 mt-1">Password akan dibuat secara acak dan
+                        dikirimkan langsung ke email reseller setelah pendaftaran ini disimpan.</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Data Akun -->
+                <div class="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-xl border border-slate-100 dark:border-slate-700">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-sm font-bold uppercase tracking-wider text-slate-400">Data Akun</h2>
+                        <label class="flex items-center gap-2 cursor-pointer relative">
+                            <input type="checkbox" name="is_active" class="peer sr-only" {{ 'checked' if not user or user.is_active else '' }}>
+                            <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                            <span class="text-sm font-medium text-slate-600 dark:text-slate-300">Akun Aktif</span>
+                        </label>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold mb-2">Email <span class="text-red-500">*</span></label>
+                            <input name="email" type="email" value="{{ user.email if user else '' }}" required
+                                placeholder="email@contoh.com"
+                                class="w-full p-2.5 border rounded-lg bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
+                        </div>
+                        {% if user %}
+                        <div>
+                            <label class="block text-sm font-bold mb-2">Password <span
+                                    class="text-slate-400 font-normal text-xs">(Kosongkan jika tidak diubah)</span></label>
+                            <input name="password" type="password" placeholder="********"
+                                class="w-full p-2.5 border rounded-lg bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Data Profil -->
+                <div class="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-xl border border-slate-100 dark:border-slate-700">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-6">Data Profil</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold mb-2">Nama Lengkap PIC <span
+                                    class="text-red-500">*</span></label>
+                            <input name="name" value="{{ user.name if user else '' }}" required placeholder="Nama Lengkap"
+                                class="w-full p-2.5 border rounded-lg bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-2">Nama Agen Wisata / Perusahaan <span
+                                    class="text-red-500">*</span></label>
+                            <input name="agency_name" value="{{ user.agency_name if user else '' }}" required
+                                placeholder="Contoh: Maju Bersama Tour"
+                                class="w-full p-2.5 border rounded-lg bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-2">No. Telepon / WhatsApp <span
+                                    class="text-red-500">*</span></label>
+                            <input name="phone" value="{{ user.phone if user else '' }}" required placeholder="08123456789"
+                                class="w-full p-2.5 border rounded-lg bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alamat -->
+            <div class="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-xl border border-slate-100 dark:border-slate-700">
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-6">Informasi Tambahan</h2>
+                <div>
+                    <label class="block text-sm font-bold mb-2">Alamat Kantor / Domisili</label>
+                    <textarea name="address" rows="3" placeholder="Alamat Lengkap"
+                        class="w-full p-2.5 border rounded-lg bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">{{ user.address if user else '' }}</textarea>
+                </div>
+            </div>
+        </form>
+
+        {% if user %}
+        <!-- Deposit Management Section -->
+        <div class="pt-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Current Status -->
+                <div class="space-y-4">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-slate-400">Status Deposit</h2>
+                    <div
+                        class="bg-slate-50 dark:bg-slate-900 rounded-xl p-6 border border-slate-100 dark:border-slate-700">
+                        <div class="text-xs text-slate-500 mb-1 uppercase tracking-tight">Saldo Saat Ini</div>
+                        <div class="text-2xl font-bold text-blue-600">Rp {{ "{:,}".format(user.deposit_balance or 0)
+                            }}</div>
+
+                        <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                            <div class="text-xs text-slate-500 mb-1">Masa Aktif Deposit</div>
+                            <div
+                                class="font-medium {% if user.deposit_expires_at and user.deposit_expires_at < now %}text-red-600{% endif %}">
+                                {{ user.deposit_expires_at.strftime('%d %b %Y') if user.deposit_expires_at else
+                                'Belum diatur' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top-up Form -->
+                <div class="space-y-4 lg:col-span-2">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-slate-400">Kelola Saldo</h2>
+                    <div
+                        class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6">
+                        <form action="{{ url_for('main.admin_reseller_deposit', id=user.id) }}" method="POST"
+                            class="space-y-4">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold mb-1">Nominal (Gunakan minus untuk
+                                        kurangi)</label>
+                                    <input type="number" name="amount" placeholder="Contoh: 100000000"
+                                        class="w-full p-2 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold mb-1">Keterangan</label>
+                                    <input type="text" name="description" placeholder="Top-up Deposit atau Penyesuaian"
+                                        class="w-full p-2 border rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500 outline-none dark:border-slate-600">
+                                </div>
+                            </div>
+                            <div class="flex justify-end">
+                                <button type="submit"
+                                    formaction="{{ url_for('main.admin_reseller_deposit', id=user.id) }}"
+                                    class="text-sm px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-bold">
+                                    Update Saldo
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transaction History -->
+            <div class="mt-8">
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">Riwayat Transaksi Deposit
+                </h2>
+                <div class="overflow-x-auto border rounded-xl dark:border-slate-700">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-slate-50 dark:bg-slate-900 text-slate-500 uppercase text-xs">
+                            <tr>
+                                <th class="px-6 py-3 font-bold">Tanggal</th>
+                                <th class="px-6 py-3 font-bold">Keterangan</th>
+                                <th class="px-6 py-3 font-bold text-right">Nominal</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y dark:divide-slate-700">
+                            {% for tx in user.deposit_transactions|sort(attribute='created_at', reverse=True) %}
+                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap text-slate-500">{{
+                                    tx.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td class="px-6 py-4 font-medium">{{ tx.description }}</td>
+                                <td
+                                    class="px-6 py-4 text-right font-bold {% if tx.amount > 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                                    {{ '+' if tx.amount > 0 }}{{ "{:,}".format(tx.amount) }}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="3" class="px-6 py-8 text-center text-slate-400 italic">Belum ada
+                                    riwayat transaksi.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="pt-6 flex justify-end gap-3">
+            <a href="{{ url_for('main.admin_resellers') }}"
+                class="px-6 py-2.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-medium">Batal</a>
+            <button type="submit" form="profileForm"
+                class="px-8 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors font-bold shadow-lg shadow-blue-500/30">
+                {{ 'Simpan Perubahan' if user else 'Tambah Reseller' }}
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

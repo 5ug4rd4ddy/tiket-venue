@@ -1,0 +1,71 @@
+{% extends "reseller_base.html" %}
+
+{% block title %}Top-up Deposit{% endblock %}
+{% block header_title %}Top-up Deposit{% endblock %}
+
+{% block content %}
+<section class="max-w-2xl mx-auto px-4 py-12">
+    <div
+        class="framer-card bg-white dark:bg-slate-900 rounded-3xl shadow-xl overflow-hidden border border-slate-100 dark:border-slate-800">
+        <div class="p-8 border-b border-slate-100 dark:border-slate-800 bg-indigo-600 text-white">
+            <h1 class="text-2xl font-bold mb-1">Top-up Deposit</h1>
+            <p class="opacity-80">Tambahkan saldo deposit untuk mempermudah transaksi Anda.</p>
+        </div>
+
+        <div class="p-8">
+            <form action="{{ url_for('main.reseller_topup') }}" method="POST" class="space-y-6">
+                <!-- Info Saldo -->
+                <div class="bg-indigo-50 dark:bg-indigo-900/30 p-4 rounded-xl flex justify-between items-center">
+                    <span class="text-sm text-indigo-700 dark:text-indigo-300">Saldo Saat Ini:</span>
+                    <span class="font-bold text-indigo-700 dark:text-indigo-300">Rp {{
+                        "{:,}".format(current_user.deposit_balance or 0) }}</span>
+                </div>
+
+                <!-- Input Nominal -->
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Nominal
+                        Top-up</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-400">Rp</span>
+                        <input type="number" name="amount" required min="{{ min_topup }}" placeholder="{{ "
+                            {:,}".format(min_topup) }}"
+                            class="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-slate-100 dark:border-slate-800 bg-transparent focus:border-indigo-500 outline-none text-xl font-bold transition-all">
+                    </div>
+                    <p class="mt-2 text-xs text-slate-500 italic">Minimal top-up: Rp {{ "{:,}".format(min_topup) }}</p>
+                </div>
+
+                <!-- Keunggulan -->
+                <div class="space-y-3 pt-2">
+                    <div class="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
+                        <svg class="w-5 h-5 text-green-500 mt-0.5" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7">
+                            </path>
+                        </svg>
+                        <span>Konfirmasi otomatis lewat Xendit</span>
+                    </div>
+                    <div class="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
+                        <svg class="w-5 h-5 text-green-500 mt-0.5" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7">
+                            </path>
+                        </svg>
+                        <span>Perpanjang masa aktif deposit hingga 1 tahun</span>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <button type="submit"
+                    class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 dark:shadow-none">
+                    Bayar Sekarang
+                </button>
+
+                <a href="{{ url_for('main.reseller_dashboard') }}"
+                    class="block text-center text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
+                    Kembali ke Dashboard
+                </a>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

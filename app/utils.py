@@ -8,8 +8,10 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 import os
+import random
+import string
 from flask import render_template, current_app, url_for
-from .models import SiteSetting
+from .models import SiteSetting, User
 
 def generate_qr_code(data):
     """Generates a QR code and returns it as a base64 encoded string."""
@@ -59,18 +61,24 @@ def send_email(to_email, subject, html_content):
         print("No site settings found. Email not sent.")
         return False
 
-    sender_email = settings.email_from_address
-    sender_name = settings.email_from_name
+    sender_email = settings.email_from_address or os.getenv('EMAIL_FROM_ADDRESS')
+    sender_name = settings.email_from_name or os.getenv('EMAIL_FROM_NAME')
+    provider = settings.email_provider or os.getenv('EMAIL_PROVIDER')
     
     try:
-        if settings.email_provider == 'smtp':
+        if provider == 'smtp':
             return _send_smtp(settings, to_email, subject, html_content, sender_email, sender_name)
-        elif settings.email_provider == 'postal':
+        elif provider == 'postal':
             return _send_postal(settings, to_email, subject, html_content, sender_email, sender_name)
-        elif settings.email_provider == 'brevo':
-            return _send_brevo(settings, to_email, subject, html_content, sender_email, sender_name)
+        elif provider == 'brevo':
+            # Use DB key or ENV key
+            api_key = settings.brevo_api_key or os.getenv('BREVO_API_KEY')
+            if not api_key:
+                print("Brevo API Key not found in DB or ENV.")
+                return False
+            return _send_brevo(api_key, to_email, subject, html_content, sender_email, sender_name)
         else:
-            print(f"Unknown email provider: {settings.email_provider}")
+            print(f"Unknown email provider: {provider}")
             return False
     except Exception as e:
         print(f"Failed to send email: {e}")
@@ -109,11 +117,11 @@ def _send_postal(settings, to_email, subject, html_content, sender_email, sender
     # Assuming Postal sends via SMTP is easier, but if API is required:
     pass 
 
-def _send_brevo(settings, to_email, subject, html_content, sender_email, sender_name):
+def _send_brevo(api_key, to_email, subject, html_content, sender_email, sender_name):
     url = "https://api.brevo.com/v3/smtp/email"
     headers = {
         "accept": "application/json",
-        "api-key": settings.brevo_api_key,
+        "api-key": api_key,
         "content-type": "application/json"
     }
     payload = {
@@ -134,10 +142,12 @@ def send_invoice_email(order):
     settings = SiteSetting.query.first()
     subject = f"Invoice #{order.invoice_number} - {settings.park_name if settings else 'Tiket Wahana'}"
     
-    # Generate QR for Invoice (maybe point to payment page?)
-    # invoice_qr = generate_qr_code(order.invoice_number)
-    
-    html_content = render_template('email/invoice.html', order=order, settings=settings)
+    try:
+        details = json.loads(order.details)
+    except:
+        details = {}
+        
+    html_content = render_template('email/invoice.html', order=order, details=details, settings=settings)
     return send_email(order.customer_email, subject, html_content)
 
 def send_eticket_email(order):
@@ -155,4 +165,65 @@ def send_eticket_email(order):
         details = {}
     
     html_content = render_template('email/eticket.html', order=order, details=details, settings=settings, qr_code=qr_url)
+    
+    # Use Reseller Email if applicable
+    # Use Reseller Email if applicable
+    target_email = order.customer_email
+    recipient_name = order.customer_name
+    
+    if order.user_id:
+        user = User.query.get(order.user_id)
+        if user and user.role == 'reseller':
+            target_email = user.email
+            recipient_name = user.agency_name or user.name
+
+    html_content = render_template('email/eticket.html', 
+                                   order=order, 
+                                   details=details, 
+                                   settings=settings, 
+                                   qr_code=qr_url,
+                                   recipient_name=recipient_name)
+
+    return send_email(target_email, subject, html_content)
+
+def send_expired_email(order):
+    settings = SiteSetting.query.first()
+    subject = f"Pesanan Kedaluwarsa - {order.invoice_number}"
+    
+    try:
+        details = json.loads(order.details)
+    except:
+        details = {}
+        
+    html_content = render_template('email/expired.html', order=order, details=details, settings=settings)
     return send_email(order.customer_email, subject, html_content)
+
+def generate_random_password(length=8):
+    """Generates a random Alphanumeric password."""
+    characters = string.ascii_letters + string.digits
+    return ''.join(random.choice(characters) for i in range(length))
+
+def send_reseller_welcome_email(app, user_id, password, url_root=None):
+    """Sends a welcome email to a new reseller with their credentials."""
+    with app.test_request_context(base_url=url_root or '/'):
+        user = User.query.get(user_id)
+        if not user:
+            print(f"User {user_id} not found for welcome email")
+            return False
+            
+        settings = SiteSetting.query.first()
+        subject = f"Selamat Datang Reseller - {settings.park_name if settings else 'Tiket Wahana'}"
+        
+        html_content = render_template('email/reseller_welcome.html', 
+                                       user=user, 
+                                       password=password, 
+                                       settings=settings,
+                                       login_url=url_for('main.login', _external=True))
+        
+        # Priority: email, then phone (though email is required for resellers now)
+        target_email = user.email
+        if not target_email:
+            print(f"No email found for user {user.id}. Cannot send welcome email.")
+            return False
+            
+        return send_email(target_email, subject, html_content)
