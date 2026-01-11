@@ -16,4 +16,5 @@ requests==2.32.3
 reportlab==4.2.5
 gunicorn==23.0.0
 xendit-python==7.0.0
+python-dateutil
 python-dotenv==1.0.1
