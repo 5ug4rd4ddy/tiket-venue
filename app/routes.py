@@ -6,7 +6,7 @@ import json
 import uuid
 import random
 import string
-from . import db
+from . import db, csrf
 from .models import Ticket, Addon, Order, SiteSetting, User, PromoCode, Gate, Partner, SpecialDate, DepositTransaction
 import csv
 from io import StringIO
@@ -538,17 +538,33 @@ def process_payment():
                     failure_url = f"{request.url_root}payment/{ticket_code}"
                     
                     # Map local payment method to Xendit payment_methods
-                    xendit_methods = None
-                    if payment_method == 'qris':
-                        xendit_methods = ["QRIS"]
-                    elif payment_method in ['va_bca', 'va_mandiri', 'va_bni']:
-                        xendit_methods = ["VIRTUAL_ACCOUNT"]
-                    elif payment_method in ['ovo', 'shopeepay', 'linkaja']:
-                        xendit_methods = ["EWALLET"]
-                    elif payment_method == 'card':
-                        xendit_methods = ["CREDIT_CARD"]
+                    # Try to direct user to specific payment channel
+                    payment_method_map = {
+                        'qris': ['QRIS'],
+                        'gopay': ['GOPAY'],
+                        'shopeepay': ['SHOPEEPAY'],
+                        'ovo': ['OVO'],
+                        'linkaja': ['LINKAJA'],
+                        'va_bca': ['BCA'],
+                        'va_mandiri': ['MANDIRI'],
+                        'va_bni': ['BNI'],
+                        'va_bri': ['BRI'],
+                        'va_permata': ['PERMATA'],
+                        'card': ['CREDIT_CARD']
+                    }
                     
-                    xendit_invoice = xendit_service.create_invoice(new_order, success_url, failure_url, xendit_methods)
+                    xendit_methods = payment_method_map.get(payment_method)
+                    
+                    try:
+                        xendit_invoice = xendit_service.create_invoice(new_order, success_url, failure_url, xendit_methods)
+                    except Exception as e:
+                        # Fallback if specific method is not enabled/available
+                        if "UNAVAILABLE_PAYMENT_METHOD_ERROR" in str(e) and xendit_methods is not None:
+                            print(f"Preferred payment method {xendit_methods} unavailable, falling back to all methods.")
+                            xendit_invoice = xendit_service.create_invoice(new_order, success_url, failure_url, None)
+                        else:
+                            raise e
+
                     xendit_url = xendit_invoice.invoice_url
                     new_order.xendit_invoice_id = xendit_invoice.id
                     new_order.xendit_invoice_url = xendit_invoice.invoice_url
@@ -586,7 +602,13 @@ def process_payment():
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @main.route('/webhook/xendit', methods=['POST'])
+@csrf.exempt
 def xendit_webhook():
+    # Debug Logging
+    print(f"--- XENDIT WEBHOOK START ---")
+    print(f"Headers: {dict(request.headers)}")
+    print(f"Body: {request.get_data(as_text=True)}")
+
     # Verify Callback Token
     settings = SiteSetting.query.first()
     expected_token = settings.xendit_webhook_token if settings and settings.xendit_webhook_token else os.getenv('XENDIT_WEBHOOK_TOKEN')
@@ -594,23 +616,32 @@ def xendit_webhook():
     # Xendit sends x-callback-token header
     callback_token = request.headers.get('x-callback-token')
     
-    if expected_token and callback_token != expected_token:
-        return jsonify({'status': 'error', 'message': 'Invalid callback token'}), 401
+    if expected_token:
+        if callback_token != expected_token:
+            print(f"WEBHOOK ERROR: Invalid Token. Expected {expected_token}, Got {callback_token}")
+            return jsonify({'status': 'error', 'message': 'Invalid callback token'}), 401
+    else:
+        print("WEBHOOK WARNING: No verification token set in server settings/env")
         
     data = request.json
     if not data:
+        print("WEBHOOK ERROR: No JSON data received")
         return jsonify({'status': 'error', 'message': 'No data'}), 400
         
     invoice_id = data.get('external_id') # This could be invoice_number (Order) or external_id (DepositTransaction)
     status = data.get('status') # PAID, EXPIRED, SETTLED
     
+    print(f"WEBHOOK INFO: Processing Invoice {invoice_id} with status {status}")
+
     # Try finding an Order first
     order = Order.query.filter_by(invoice_number=invoice_id).first()
     if order:
-        if status in ['PAID', 'SETTLED']:
+        print(f"WEBHOOK INFO: Found Order {order.id}")
+        if status in ['PAID', 'SETTLED', 'COMPLETED']:
             if order.payment_status != 'paid':
                 order.payment_status = 'paid'
                 db.session.commit()
+                print(f"WEBHOOK SUCCESS: Order {order.id} marked as PAID")
                 
                 # Send E-Ticket Email (Async)
                 try:
@@ -619,31 +650,45 @@ def xendit_webhook():
                     threading.Thread(target=send_email_with_context, args=(app, send_eticket_email, order.id, base_url)).start()
                 except Exception as e:
                     print(f"Failed to start eticket email thread: {e}")
+            else:
+                print(f"WEBHOOK INFO: Order {order.id} already PAID")
         elif status == 'EXPIRED':
             order.payment_status = 'expired'
             db.session.commit()
+            print(f"WEBHOOK INFO: Order {order.id} marked as EXPIRED")
     else:
         # If not order, check for DepositTransaction
         tx = DepositTransaction.query.filter_by(external_id=invoice_id).first()
         if tx:
-            if status in ['PAID', 'SETTLED']:
+            print(f"WEBHOOK INFO: Found DepositTransaction {tx.id}")
+            if status in ['PAID', 'SETTLED', 'COMPLETED']:
                 if tx.status != 'completed':
                     tx.status = 'completed'
                     
                     # Update user balance
                     user = User.query.get(tx.user_id)
-                    user.deposit_balance = (user.deposit_balance or 0) + tx.amount
-                    
-                    # Extend expiration
-                    settings = SiteSetting.query.first()
-                    duration = settings.reseller_deposit_duration_days if settings else 365
-                    user.deposit_expires_at = datetime.utcnow() + timedelta(days=duration)
-                    
-                    db.session.commit()
+                    if user:
+                        user.deposit_balance = (user.deposit_balance or 0) + tx.amount
+                        
+                        # Extend expiration
+                        settings = SiteSetting.query.first()
+                        duration = settings.reseller_deposit_duration_days if settings else 365
+                        user.deposit_expires_at = datetime.utcnow() + timedelta(days=duration)
+                        
+                        db.session.commit()
+                        print(f"WEBHOOK SUCCESS: Deposit {tx.id} COMPLETED. User {user.id} balance updated.")
+                    else:
+                        print(f"WEBHOOK ERROR: User {tx.user_id} not found for deposit {tx.id}")
+                        db.session.rollback() # Rollback tx status update if user not found
+                        return jsonify({'status': 'error', 'message': 'User not found'}), 500
+                else:
+                    print(f"WEBHOOK INFO: Deposit {tx.id} already COMPLETED")
             elif status == 'EXPIRED':
                 tx.status = 'expired'
                 db.session.commit()
+                print(f"WEBHOOK INFO: Deposit {tx.id} marked as EXPIRED")
         else:
+            print(f"WEBHOOK ERROR: Transaction/Order with external_id {invoice_id} not found")
             return jsonify({'status': 'error', 'message': 'Transaction not found'}), 404
         
     return jsonify({'status': 'success'})
@@ -967,7 +1012,9 @@ def admin_transactions():
     
     # TICKET ORDERS
     if tx_type in ['all', 'personal', 'group']:
-        order_query = Order.query
+        # Filter out reseller orders
+        order_query = Order.query.outerjoin(User).filter(or_(User.id == None, User.role != 'reseller'))
+        
         if start_date:
             order_query = order_query.filter(func.date(Order.created_at) >= start_date)
         if end_date:
@@ -981,14 +1028,23 @@ def admin_transactions():
             
         orders = order_query.order_by(Order.created_at.desc()).all()
         for o in orders:
-            o.display_type = 'tiket'
+            # Display Type: Personal or Group
+            o.display_type = (o.visit_type or 'Personal').title()
             o.display_id = o.invoice_number
             o.display_customer = o.customer_name
             o.display_amount = o.total_price
             o.display_status = o.payment_status
             results.append(o)
             
-    # DEPOSIT TRANSACTIONS
+    # DEPOSIT TRANSACTIONS (Reseller Topups)
+    # User asked to remove "transactions from reseller" but implicitly "ticket transactions".
+    # Deposits are technical/system transactions, but they ARE from resellers.
+    # However, keeping them here might be useful as they are "Financial Transactions".
+    # But if the user wants strict separation, maybe I should hide them?
+    # The prompt said: "pindahkan ke menu ... khusus transaksi yang dilakukan oleh reseller (bukan deposit)"
+    # This implies the NEW menu is NOT for deposits.
+    # So deposits remain here? Or deposits have their own place?
+    # "Deposit Reseller" is an option in the filter. I'll keep it for now.
     if tx_type == 'deposit':
         # Only show topups and adjustments, not internal purchases (which are already in orders)
         deposit_query = DepositTransaction.query.filter(DepositTransaction.transaction_type != 'purchase')
@@ -1005,7 +1061,7 @@ def admin_transactions():
             
         deposits = deposit_query.order_by(DepositTransaction.created_at.desc()).all()
         for d in deposits:
-            d.display_type = 'reseller'
+            d.display_type = 'Deposit'
             d.display_id = d.external_id or f"TX-{d.id}"
             d.display_customer = d.user.name if d.user else "System"
             d.display_amount = d.amount
@@ -1015,6 +1071,55 @@ def admin_transactions():
     # Combine and sort
     results.sort(key=lambda x: x.created_at, reverse=True)
     return render_template('admin/transactions.html', orders=results)
+
+@main.route('/dashboard/transactions/reseller')
+def admin_reseller_transactions():
+    if not session.get('logged_in') or session.get('user_role') != 'admin': return redirect(url_for('main.login'))
+    
+    # Filters
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    status = request.args.get('status')
+    payment_method = request.args.get('payment_method')
+    tx_type = request.args.get('type', 'all')
+    
+    results = []
+    
+    # RESELLER TICKET ORDERS ONLY
+    # Filter FOR reseller orders
+    order_query = Order.query.join(User).filter(User.role == 'reseller')
+    
+    if start_date:
+        order_query = order_query.filter(func.date(Order.created_at) >= start_date)
+    if end_date:
+        order_query = order_query.filter(func.date(Order.created_at) <= end_date)
+    if status and status != 'all':
+        order_query = order_query.filter(Order.payment_status == status)
+    if payment_method and payment_method != 'all':
+        order_query = order_query.filter(Order.payment_method == payment_method)
+    if tx_type in ['personal', 'group']:
+        order_query = order_query.filter(Order.visit_type == tx_type)
+        
+    orders = order_query.order_by(Order.created_at.desc()).all()
+    for o in orders:
+        o.display_type = (o.visit_type or 'Personal').title()
+        o.display_id = o.invoice_number
+        o.display_customer = o.customer_name # This might be end-customer name, or reseller name?
+        # For reseller orders, usually we want to know WHICH reseller.
+        # But order.customer_name is likely the visitor name.
+        # The reseller name is in o.user.name.
+        # I'll stick to customer_name for now as it's the "Transaction List".
+        # Maybe append Reseller name? e.g. "Customer (via Reseller)"
+        if o.user:
+            o.display_customer = f"{o.customer_name} ({o.user.agency_name or o.user.name})"
+        else:
+            o.display_customer = o.customer_name
+
+        o.display_amount = o.total_price
+        o.display_status = o.payment_status
+        results.append(o)
+            
+    return render_template('admin/reseller_transactions.html', orders=orders)
 
 @main.route('/dashboard/transactions/order/<int:id>')
 def admin_transaction_order_detail(id):

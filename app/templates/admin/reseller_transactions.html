@@ -1,22 +1,21 @@
 {% extends "admin_base.html" %}
-{% block title %}Riwayat Transaksi{% endblock %}
+{% block title %}Transaksi Reseller{% endblock %}
 
 {% block content %}
 <div class="mb-6">
-    <h1 class="text-2xl font-bold">Riwayat Transaksi</h1>
-    <p class="text-slate-500">Semua pesanan yang masuk ke sistem.</p>
+    <h1 class="text-2xl font-bold">Transaksi Reseller</h1>
+    <p class="text-slate-500">Daftar tiket yang dibeli oleh reseller.</p>
 </div>
 
 <!-- Filters -->
 <div class="mb-6 bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
     <form method="GET" class="flex flex-wrap gap-4 items-end">
         <div>
-            <label class="block text-sm font-medium mb-1">Tipe Transaksi</label>
+            <label class="block text-sm font-medium mb-1">Tipe Tiket</label>
             <select name="type" class="p-2 border rounded-lg bg-transparent dark:border-slate-600 dark:bg-slate-800">
                 <option value="all" {% if request.args.get('type')=='all' or not request.args.get('type') %}selected{% endif %}>Semua Tiket</option>
                 <option value="personal" {% if request.args.get('type')=='personal' %}selected{% endif %}>Tiket Personal</option>
                 <option value="group" {% if request.args.get('type')=='group' %}selected{% endif %}>Tiket Group</option>
-                <option value="deposit" {% if request.args.get('type')=='deposit' %}selected{% endif %}>Deposit Reseller</option>
             </select>
         </div>
         <div>
@@ -44,42 +43,24 @@
             <select name="payment_method"
                 class="p-2 border rounded-lg bg-transparent dark:border-slate-600 dark:bg-slate-800">
                 <option value="all">Semua Metode</option>
-                <option value="qris" {% if request.args.get('payment_method')=='qris' %}selected{% endif %}>QRIS
-                </option>
-                <option value="gopay" {% if request.args.get('payment_method')=='gopay' %}selected{% endif %}>GoPay
-                </option>
-                <option value="shopeepay" {% if request.args.get('payment_method')=='shopeepay' %}selected{% endif %}>
-                    ShopeePay</option>
+                <option value="deposit" {% if request.args.get('payment_method')=='deposit' %}selected{% endif %}>Saldo Deposit</option>
+                <option value="qris" {% if request.args.get('payment_method')=='qris' %}selected{% endif %}>QRIS</option>
+                <option value="gopay" {% if request.args.get('payment_method')=='gopay' %}selected{% endif %}>GoPay</option>
+                <option value="shopeepay" {% if request.args.get('payment_method')=='shopeepay' %}selected{% endif %}>ShopeePay</option>
                 <option value="ovo" {% if request.args.get('payment_method')=='ovo' %}selected{% endif %}>OVO</option>
-                <option value="linkaja" {% if request.args.get('payment_method')=='linkaja' %}selected{% endif %}>
-                    LinkAja</option>
-                <option value="va_bca" {% if request.args.get('payment_method')=='va_bca' %}selected{% endif %}>VA BCA
-                </option>
-                <option value="va_mandiri" {% if request.args.get('payment_method')=='va_mandiri' %}selected{% endif %}>
-                    VA Mandiri</option>
-                <option value="va_bni" {% if request.args.get('payment_method')=='va_bni' %}selected{% endif %}>VA BNI
-                </option>
-                <option value="card" {% if request.args.get('payment_method')=='card' %}selected{% endif %}>Kartu
-                    Kredit/Debit</option>
-                <option value="cash" {% if request.args.get('payment_method')=='cash' %}selected{% endif %}>Cash / Tunai
-                </option>
+                <option value="linkaja" {% if request.args.get('payment_method')=='linkaja' %}selected{% endif %}>LinkAja</option>
+                <option value="va_bca" {% if request.args.get('payment_method')=='va_bca' %}selected{% endif %}>VA BCA</option>
+                <option value="va_mandiri" {% if request.args.get('payment_method')=='va_mandiri' %}selected{% endif %}>VA Mandiri</option>
+                <option value="va_bni" {% if request.args.get('payment_method')=='va_bni' %}selected{% endif %}>VA BNI</option>
+                <option value="card" {% if request.args.get('payment_method')=='card' %}selected{% endif %}>Kartu Kredit/Debit</option>
+                <option value="cash" {% if request.args.get('payment_method')=='cash' %}selected{% endif %}>Cash / Tunai</option>
             </select>
         </div>
         <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
             Filter Data
         </button>
-        <a href="{{ url_for('main.export_transactions', start_date=request.args.get('start_date'), end_date=request.args.get('end_date'), status=request.args.get('status'), payment_method=request.args.get('payment_method'), type=request.args.get('type')) }}"
-            class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="7 10 12 15 17 10"></polyline>
-                <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-            Export CSV
-        </a>
         {% if request.args.get('start_date') or request.args.get('status') %}
-        <a href="{{ url_for('main.admin_transactions') }}"
+        <a href="{{ url_for('main.admin_reseller_transactions') }}"
             class="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 px-4 py-2">
             Reset
         </a>
@@ -94,7 +75,7 @@
             <thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
                 <tr>
                     <th class="px-6 py-4 font-semibold text-slate-500 uppercase tracking-wider text-xs">Tgl / Invoice</th>
-                    <th class="px-6 py-4 font-semibold text-slate-500 uppercase tracking-wider text-xs">Pelanggan</th>
+                    <th class="px-6 py-4 font-semibold text-slate-500 uppercase tracking-wider text-xs">Reseller / Pelanggan</th>
                     <th class="px-6 py-4 font-semibold text-slate-500 uppercase tracking-wider text-xs">Tipe</th>
                     <th class="px-6 py-4 font-semibold text-slate-500 uppercase tracking-wider text-xs">Tgl Kunjungan</th>
                     <th class="px-6 py-4 font-semibold text-slate-500 uppercase tracking-wider text-xs">Status</th>
@@ -111,13 +92,9 @@
                         <div class="font-bold text-slate-700 dark:text-slate-200">{{ order.display_id }}</div>
                     </td>
                     <td class="px-6 py-4">
-                        {% if order.display_type in ['Personal', 'Group'] %}
-                        <div class="font-medium text-slate-700 dark:text-slate-200">{{ order.customer_email }}</div>
+                        <div class="font-medium text-slate-700 dark:text-slate-200">{{ order.display_customer }}</div>
                         {% if order.payment_status == 'paid' %}
                         <div class="text-[10px] text-slate-400 font-mono mt-1">{{ order.uuid }}</div>
-                        {% endif %}
-                        {% else %}
-                        <div class="font-medium text-slate-700 dark:text-slate-200">{{ order.display_customer }}</div>
                         {% endif %}
                     </td>
                     <td class="px-6 py-4">
@@ -129,11 +106,7 @@
                         </span>
                     </td>
                     <td class="px-6 py-4">
-                        {% if order.display_type in ['Personal', 'Group'] %}
                         <div class="text-sm">{{ order.visit_date }}</div>
-                        {% else %}
-                        <span class="text-slate-300">-</span>
-                        {% endif %}
                     </td>
                     <td class="px-6 py-4">
                         <span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider 
@@ -144,7 +117,6 @@
                         </span>
                     </td>
                     <td class="px-6 py-4 text-center">
-                        {% if order.display_type in ['Personal', 'Group'] %}
                         <a href="{{ url_for('main.admin_transaction_order_detail', id=order.id) }}"
                             class="text-blue-600 hover:text-blue-800 dark:hover:text-blue-400 font-bold text-xs flex items-center justify-center gap-1 mx-auto">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
@@ -155,12 +127,6 @@
                             </svg>
                             Detail
                         </a>
-                        {% else %}
-                        <a href="{{ url_for('main.admin_edit_reseller', id=order.user_id) }}"
-                            class="text-indigo-600 hover:text-indigo-800 font-bold text-xs flex items-center justify-center gap-1 mx-auto">
-                            User
-                        </a>
-                        {% endif %}
                     </td>
                     <td class="px-6 py-4 text-right font-bold font-mono text-slate-700 dark:text-slate-200">
                         Rp {{ "{:,}".format(order.display_amount) }}
@@ -168,8 +134,8 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="6" class="px-6 py-12 text-center text-slate-400">
-                        Belum ada data transaksi yang sesuai filter.
+                    <td colspan="7" class="px-6 py-12 text-center text-slate-400">
+                        Belum ada data transaksi reseller yang sesuai filter.
                     </td>
                 </tr>
                 {% endfor %}

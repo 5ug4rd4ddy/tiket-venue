@@ -106,83 +106,45 @@
 
         {% else %}
         {% if not (current_user and current_user.role == 'reseller') %}
+        
+        {% set payment_names = {
+            'qris': 'QRIS',
+            'gopay': 'GoPay',
+            'shopeepay': 'ShopeePay',
+            'ovo': 'OVO',
+            'linkaja': 'LinkAja',
+            'dana': 'DANA',
+            'va_bca': 'Virtual Account BCA',
+            'va_mandiri': 'Virtual Account Mandiri',
+            'va_bni': 'Virtual Account BNI',
+            'va_bri': 'Virtual Account BRI',
+            'va_permata': 'Virtual Account Permata',
+            'card': 'Kartu Kredit',
+            'deposit': 'Saldo Deposit',
+            'cash': 'Tunai'
+        } %}
+        {% set display_method = payment_names.get(order.payment_method, order.payment_method|upper) %}
+
         <div class="mb-4">
-            <div class="text-sm font-semibold mb-2">Kartu Kredit / Debit</div>
+            <div class="text-sm font-semibold mb-2">{{ display_method }}</div>
+            
             {% if order.payment_status == 'pending' %}
-            <div class="bg-white p-4 rounded-lg border border-slate-200 text-left">
-                <form id="cardForm" onsubmit="event.preventDefault(); processCardPayment();">
-                    <div class="mb-3">
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Nomor Kartu</label>
-                        <input type="text" class="w-full p-2 border rounded font-mono bg-slate-50 text-slate-600"
-                            value="4512 1234 5678 9010" readonly>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4 mb-3">
-                        <div>
-                            <label class="block text-xs font-medium text-slate-500 mb-1">Masa Berlaku</label>
-                            <input type="text" class="w-full p-2 border rounded font-mono bg-slate-50 text-slate-600"
-                                value="12/25" readonly>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-slate-500 mb-1">CVV</label>
-                            <input type="password"
-                                class="w-full p-2 border rounded font-mono bg-slate-50 text-slate-600" value="123"
-                                readonly>
-                        </div>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Nama Pemegang Kartu</label>
-                        <input type="text" class="w-full p-2 border rounded bg-slate-50 text-slate-600" value="JOHN DOE"
-                            readonly>
-                    </div>
-                    <button type="submit" id="payBtn"
-                        class="w-full bg-indigo-600 text-white py-2 rounded-lg font-bold hover:bg-indigo-700 transition-colors">
-                        Bayar Sekarang
-                    </button>
-                </form>
-            </div>
-            <script>
-                async function processCardPayment() {
-                    const btn = document.getElementById('payBtn');
-                    btn.disabled = true;
-                    btn.innerHTML = 'Memproses...';
-
-                    try {
-                        const response = await fetch('/api/pay-dummy/{{ order.id }}', {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                            }
-                        });
-                        const data = await response.json();
-
-                        if (data.status === 'success') {
-                            window.location.reload();
-                        } else {
-                            alert('Pembayaran Gagal: ' + data.message);
-                            btn.disabled = false;
-                            btn.innerHTML = 'Bayar Sekarang';
-                        }
-                    } catch (e) {
-                        alert('Terjadi kesalahan sistem');
-                        btn.disabled = false;
-                        btn.innerHTML = 'Bayar Sekarang';
-                    }
-                }
-            </script>
+                <!-- This block should theoretically be unreachable given the logic above, 
+                     but keeping a simplified message just in case -->
+                <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200 text-yellow-800 text-sm">
+                    Menunggu pembayaran...
+                </div>
             {% else %}
-            {% if not (current_user and current_user.role == 'reseller') %}
-            <div
-                class="flex items-center justify-center gap-2 text-green-600 p-4 bg-green-50 rounded-lg border border-green-200">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
-                    <line x1="9" y1="9" x2="9.01" y2="9"></line>
-                    <line x1="15" y1="9" x2="15.01" y2="9"></line>
-                </svg>
-                <span class="font-medium">Pembayaran Berhasil Diverifikasi</span>
-            </div>
-            {% endif %}
+                <div class="flex items-center justify-center gap-2 text-green-600 p-4 bg-green-50 rounded-lg border border-green-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                        <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                        <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                    </svg>
+                    <span class="font-medium">Pembayaran Berhasil Diverifikasi</span>
+                </div>
             {% endif %}
         </div>
         {% endif %}
@@ -207,10 +169,10 @@
 {% if order.payment_status == 'pending' %}
 <script>
     // Countdown Timer
-    {% if order.expires_at %}
-    const dueDate = new Date("{{ order.expires_at.isoformat() }}Z").getTime();
+    const dueDate = {% if order.expires_at %}
+        new Date("{{ order.expires_at.isoformat() }}Z").getTime();
     {% else %}
-    const dueDate = new Date("{{ order.payment_due_at.isoformat() }}Z").getTime();
+        new Date("{{ order.payment_due_at.isoformat() }}Z").getTime();
     {% endif %}
 
     const countdownEl = document.getElementById('countdown');

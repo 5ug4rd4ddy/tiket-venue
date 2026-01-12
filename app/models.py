@@ -123,6 +123,7 @@ class Order(db.Model):
 
     # Reseller tracking
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', backref=db.backref('orders', lazy=True))
 
     # Operator Checkin Info
     wristband_at = db.Column(db.DateTime)

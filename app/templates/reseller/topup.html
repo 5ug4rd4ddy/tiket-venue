@@ -28,9 +28,8 @@
                         Top-up</label>
                     <div class="relative">
                         <span class="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-400">Rp</span>
-                        <input type="number" name="amount" required min="{{ min_topup }}" placeholder="{{ "
-                            {:,}".format(min_topup) }}"
-                            class="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-slate-100 dark:border-slate-800 bg-transparent focus:border-indigo-500 outline-none text-xl font-bold transition-all">
+                        <input type="number" name="amount" required min="{{ min_topup }}" placeholder="{{ "{:,}".format(min_topup) }}"
+                            class="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-slate-100 dark:border-slate-800 bg-transparent focus:border-indigo-500 outline-none text-xl font-bold transition-all text-left">
                     </div>
                     <p class="mt-2 text-xs text-slate-500 italic">Minimal top-up: Rp {{ "{:,}".format(min_topup) }}</p>
                 </div>

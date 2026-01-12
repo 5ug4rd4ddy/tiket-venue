@@ -2,12 +2,23 @@
 {% block header %}{% endblock %}
 {% block main_class %}min-h-screen flex items-center justify-center{% endblock %}
 
-{% block title %}Login Admin{% endblock %}
+{% block title %}Login{% endblock %}
 
 {% block content %}
 <section class="w-full max-w-md">
     <div class="bg-white dark:bg-slate-900 border border-transparent rounded-2xl shadow-lg p-6">
         <h1 class="text-2xl font-bold mb-6 text-center">Login</h1>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="mb-4 p-3 rounded-lg text-sm {% if category == 'error' %}bg-red-50 text-red-600 border border-red-100{% else %}bg-green-50 text-green-600 border border-green-100{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
         <form method="POST" class="space-y-4">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div>
