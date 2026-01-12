@@ -14,6 +14,7 @@
 
         <div class="p-8">
             <form action="{{ url_for('main.reseller_topup') }}" method="POST" class="space-y-6">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <!-- Info Saldo -->
                 <div class="bg-indigo-50 dark:bg-indigo-900/30 p-4 rounded-xl flex justify-between items-center">
                     <span class="text-sm text-indigo-700 dark:text-indigo-300">Saldo Saat Ini:</span>

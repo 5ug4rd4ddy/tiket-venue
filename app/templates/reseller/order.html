@@ -177,6 +177,7 @@
 </section>
 
 <form id="checkoutForm" method="POST" action="{{ url_for('main.checkout') }}" class="hidden">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <input type="hidden" name="order_data" id="orderDataInput">
 </form>
 

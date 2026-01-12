@@ -272,7 +272,8 @@
             const response = await fetch(`/dashboard/transaction/${orderId}/update-status`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 },
                 body: JSON.stringify({ 
                     status: newStatus,
