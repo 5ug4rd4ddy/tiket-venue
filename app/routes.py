@@ -13,7 +13,7 @@ from io import StringIO
 from flask import make_response
 from datetime import datetime, timedelta
 from sqlalchemy import func, or_
-from .utils import send_invoice_email, send_eticket_email, generate_random_password, send_reseller_welcome_email, send_expired_email
+from .utils import send_invoice_email, send_eticket_email, generate_random_password, send_reseller_welcome_email, send_expired_email, generate_qr_file
 from .xendit_service import XenditService
 import threading
 from io import BytesIO
@@ -941,6 +941,127 @@ def reseller_order():
                           addons=addons, 
                           user=user,
                           settings=settings)
+
+@main.route('/reseller/checkout', methods=['POST'])
+def reseller_checkout():
+    if not session.get('logged_in') or session.get('user_role') != 'reseller':
+        return redirect(url_for('main.login'))
+
+    user = User.query.get(session.get('user_id'))
+    if not user:
+        return redirect(url_for('main.login'))
+
+    order_data_raw = request.form.get('order_data')
+    if not order_data_raw:
+        flash('Data pesanan tidak ditemukan', 'error')
+        return redirect(url_for('main.reseller_order'))
+    
+    try:
+        data = json.loads(order_data_raw)
+        
+        # Parse date
+        visit_date_str = data.get('date')
+        try:
+            visit_date = datetime.strptime(visit_date_str, '%Y-%m-%d').date()
+        except:
+            flash('Tanggal tidak valid', 'error')
+            return redirect(url_for('main.reseller_order'))
+            
+        date_status = get_date_status(visit_date)
+        if date_status == 'closed':
+             flash('Wahana tutup pada tanggal tersebut', 'error')
+             return redirect(url_for('main.reseller_order'))
+             
+        summary = {
+            'date': visit_date_str,
+            'type': data.get('type'),
+            'group_details': None,
+            'order_items': [],
+            'addons': [],
+            'total': 0
+        }
+        
+        # Process Tickets
+        all_tickets = Ticket.query.all()
+        tickets_map = {t.slug: t for t in all_tickets}
+        counts = data.get('counts', {})
+        
+        for key, qty in counts.items():
+            qty = int(qty)
+            if qty > 0:
+                # key format: slug_adult or slug_child
+                if key.endswith('_adult'):
+                    slug = key[:-6]
+                    variant = 'adult'
+                elif key.endswith('_child'):
+                    slug = key[:-6]
+                    variant = 'child'
+                elif key.endswith('_umum'):
+                    slug = key[:-5]
+                    variant = 'umum'
+                else:
+                    continue
+                
+                ticket = tickets_map.get(slug)
+                if ticket:
+                    # FORCE RESELLER PRICE
+                    price = ticket.get_price(date_status, variant, role='reseller')
+                    
+                    variant_name = 'Dewasa' if variant == 'adult' else ('Anak' if variant == 'child' else 'Umum')
+                    name = f"{ticket.name} ({variant_name})"
+                    subtotal = price * qty
+                    
+                    summary['order_items'].append({
+                        'name': name,
+                        'qty': qty,
+                        'price': price,
+                        'subtotal': subtotal,
+                        'category': ticket.category or 'personal',
+                        'slug': ticket.slug,
+                        'variant': variant
+                    })
+                    summary['total'] += subtotal
+
+        # Process Addons
+        all_addons = Addon.query.all()
+        addons_map = {a.slug: a for a in all_addons}
+        selected_addons = data.get('addons', [])
+        
+        for slug in selected_addons:
+            addon = addons_map.get(slug)
+            if addon:
+                price = addon.get_price(role='reseller')
+                summary['addons'].append({
+                    'name': addon.name,
+                    'price': price,
+                    'category': addon.category or 'personal'
+                })
+                summary['total'] += price
+        
+        session['checkout_summary'] = summary
+        
+        # Load regions data for autocomplete
+        cities_list = []
+        try:
+            regions_path = os.path.join(current_app.root_path, '..', 'instance', 'regions.json')
+            if os.path.exists(regions_path):
+                with open(regions_path, 'r', encoding='utf-8') as f:
+                    regions = json.load(f)
+                    for r in regions:
+                        if 'kota' in r and isinstance(r['kota'], list):
+                            cities_list.extend(r['kota'])
+            cities_list.sort()
+        except Exception as e:
+            print(f"Error loading regions: {e}")
+
+        return render_template('reseller/checkout.html', summary=summary, user=user, cities=cities_list)
+
+    except Exception as e:
+        print(f"Reseller Checkout Error: {e}")
+        import traceback
+        traceback.print_exc()
+        flash('Terjadi kesalahan memproses data', 'error')
+        return redirect(url_for('main.reseller_order'))
 
 # --- ADMIN DASHBOARD ---
 @main.route('/dashboard')
@@ -2273,3 +2394,237 @@ def _count_pax(details_json):
         return count
     except:
         return 0
+
+@main.route('/reseller/history/<uuid>')
+def reseller_order_detail(uuid):
+    if not session.get('logged_in') or session.get('user_role') != 'reseller':
+        return redirect(url_for('main.login'))
+        
+    user = User.query.get(session.get('user_id'))
+    order = Order.query.filter_by(uuid=uuid, user_id=user.id).first_or_404()
+    
+    try:
+        details = json.loads(order.details)
+    except:
+        details = {}
+        
+    return render_template('reseller/order_detail.html', order=order, details=details)
+
+@main.route('/download/eticket/<uuid>')
+def download_eticket(uuid):
+    order = Order.query.filter_by(uuid=uuid).first_or_404()
+    
+    # Security check: if logged in as reseller, must be their order
+    if session.get('user_role') == 'reseller':
+        if order.user_id != session.get('user_id'):
+            return "Unauthorized", 403
+            
+    try:
+        details = json.loads(order.details)
+    except:
+        details = {}
+        
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=18)
+    elements = []
+    
+    styles = getSampleStyleSheet()
+    style_normal = styles["Normal"]
+    style_heading = styles["Heading1"]
+    style_center = ParagraphStyle(name='Center', parent=styles['Normal'], alignment=TA_CENTER)
+    
+    # Header
+    settings = SiteSetting.query.first()
+    header_text = settings.park_name if settings else "Tiket Wahana"
+    
+    elements.append(Paragraph(f"<b>{header_text}</b>", style_center))
+    elements.append(Spacer(1, 12))
+    elements.append(Paragraph("E-TICKET", style_center))
+    elements.append(Spacer(1, 12))
+    
+    # QR Code
+    qr_filename = f"{order.uuid}.png"
+    # Ensure QR exists
+    generate_qr_file(order.uuid, qr_filename)
+    qr_path = os.path.join(current_app.root_path, 'static', 'qrcodes', qr_filename)
+    
+    try:
+        im = RLImage(qr_path, width=2*inch, height=2*inch)
+        elements.append(im)
+    except Exception as e:
+        print(f"Failed to load QR image: {e}")
+        elements.append(Paragraph(f"[QR CODE: {order.uuid}]", style_center))
+        
+    elements.append(Spacer(1, 6))
+    elements.append(Paragraph(f"CODE: {order.uuid}", style_center))
+    elements.append(Spacer(1, 24))
+    
+    # Info
+    visit_date_str = str(order.visit_date)
+    
+    data_info = [
+        ["No. Invoice", f": {order.invoice_number}"],
+        ["Tanggal Kunjungan", f": {visit_date_str}"],
+        ["Nama Pengunjung", f": {order.customer_name}"],
+        ["Status", f": {order.payment_status.upper()}"]
+    ]
+    
+    # Add Group Info if available
+    group_info = details.get('group') or details.get('group_details')
+    if isinstance(group_info, dict) and group_info.get('name'):
+        data_info.append(["Nama Group", f": {group_info.get('name')}"])
+        if group_info.get('size'):
+             data_info.append(["Jumlah Peserta", f": {group_info.get('size')} Pax"])
+    
+    t_info = Table(data_info, colWidths=[2*inch, 4*inch])
+    t_info.setStyle(TableStyle([
+        ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
+        ('FONTSIZE', (0,0), (-1,-1), 12),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+    ]))
+    elements.append(t_info)
+    elements.append(Spacer(1, 24))
+    
+    # Items
+    data_items = [["Tiket / Item", "Qty"]]
+    for item in details.get('items', []):
+        data_items.append([item['name'], f"{item['qty']} Pax"])
+        
+    for item in details.get('addons', []):
+        data_items.append([f"Addon - {item['name']}", "1"])
+
+    t_items = Table(data_items, colWidths=[4*inch, 2*inch])
+    t_items.setStyle(TableStyle([
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('GRID', (0,0), (-1,-1), 1, colors.black),
+        ('PADDING', (0,0), (-1,-1), 6),
+        ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
+    ]))
+    elements.append(t_items)
+    
+    elements.append(Spacer(1, 36))
+    elements.append(Paragraph("Harap tunjukkan E-Ticket ini di loket masuk.", style_center))
+    
+    doc.build(elements)
+    buffer.seek(0)
+    
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=f"Eticket_{order.uuid}.pdf",
+        mimetype='application/pdf'
+    )
+
+@main.route('/download/invoice/<uuid>')
+def download_invoice(uuid):
+    order = Order.query.filter_by(uuid=uuid).first_or_404()
+    
+    if session.get('user_role') == 'reseller':
+        if order.user_id != session.get('user_id'):
+            return "Unauthorized", 403
+            
+    try:
+        details = json.loads(order.details)
+    except:
+        details = {}
+        
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=18)
+    elements = []
+    
+    styles = getSampleStyleSheet()
+    style_normal = styles["Normal"]
+    style_heading = styles["Heading1"]
+    style_center = ParagraphStyle(name='Center', parent=styles['Normal'], alignment=TA_CENTER)
+    
+    # Header
+    settings = SiteSetting.query.first()
+    header_text = settings.park_name if settings else "Tiket Wahana"
+    
+    elements.append(Paragraph(f"<b>{header_text}</b>", style_heading))
+    elements.append(Spacer(1, 12))
+    elements.append(Paragraph("INVOICE / BUKTI PEMBAYARAN", style_heading))
+    elements.append(Spacer(1, 24))
+    
+    # Order Info
+    data_info = [
+        ["No. Invoice", f": {order.invoice_number}"],
+        ["Tanggal", f": {order.created_at.strftime('%d %B %Y %H:%M')}"],
+        ["Status", f": {order.payment_status.upper()}"],
+        ["Pelanggan", f": {order.customer_name}"],
+        ["Email", f": {order.customer_email}"],
+        ["Tipe Kunjungan", f": {order.visit_type.title()}"]
+    ]
+    
+    if order.visit_type == 'group':
+        group_info = details.get('group_details') or details.get('group')
+        if isinstance(group_info, dict):
+            data_info.append(["Nama Group", f": {group_info.get('name', '-')}"])
+            data_info.append(["Jumlah Peserta", f": {group_info.get('size', '-')} Pax"])
+    
+    t_info = Table(data_info, colWidths=[2*inch, 4*inch])
+    t_info.setStyle(TableStyle([
+        ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
+        ('FONTSIZE', (0,0), (-1,-1), 10),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+    ]))
+    elements.append(t_info)
+    elements.append(Spacer(1, 24))
+    
+    # Items Table
+    data_items = [["Deskripsi Item", "Qty", "Harga", "Total"]]
+    
+    for item in details.get('items', []):
+        data_items.append([
+            f"Tiket - {item['name']}",
+            str(item.get('qty', 0)),
+            f"Rp {item.get('price', 0):,}",
+            f"Rp {item.get('subtotal', 0):,}"
+        ])
+        
+    for item in details.get('addons', []):
+        data_items.append([
+            f"Addon - {item['name']}",
+            "1",
+            f"Rp {item.get('price', 0):,}",
+            f"Rp {item.get('price', 0):,}"
+        ])
+        
+    t_items = Table(data_items, colWidths=[3.5*inch, 1*inch, 1.5*inch, 1.5*inch])
+    t_items.setStyle(TableStyle([
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
+        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+        ('GRID', (0,0), (-1,-1), 1, colors.black),
+        ('PADDING', (0,0), (-1,-1), 6),
+    ]))
+    elements.append(t_items)
+    elements.append(Spacer(1, 12))
+    
+    # Totals
+    data_total = []
+    data_total.append(["Subtotal", f"Rp {order.total_price + order.discount_amount:,}"])
+    if order.discount_amount > 0:
+        data_total.append(["Diskon", f"- Rp {order.discount_amount:,}"])
+    data_total.append(["TOTAL", f"Rp {order.total_price:,}"])
+    
+    t_total = Table(data_total, colWidths=[6*inch, 1.5*inch])
+    t_total.setStyle(TableStyle([
+        ('FONTNAME', (0,0), (-1,-1), 'Helvetica-Bold'),
+        ('ALIGN', (0,0), (-1,-1), 'RIGHT'),
+        ('LINEABOVE', (0,-1), (-1,-1), 1, colors.black),
+    ]))
+    elements.append(t_total)
+    
+    elements.append(Spacer(1, 36))
+    elements.append(Paragraph("Terima kasih atas kunjungan Anda!", style_center))
+    
+    doc.build(elements)
+    buffer.seek(0)
+    
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=f"Invoice_{order.invoice_number}.pdf",
+        mimetype='application/pdf'
+    )

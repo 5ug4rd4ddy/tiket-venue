@@ -39,7 +39,9 @@
                         class="w-full p-3 rounded-lg border bg-transparent focus:ring-2 focus:ring-indigo-500 outline-none"
                         placeholder="Ketik nama kota...">
                     <datalist id="cityList">
-                        <!-- Populated by JS -->
+                        {% for city in cities %}
+                        <option value="{{ city }}"></option>
+                        {% endfor %}
                     </datalist>
                     <p class="text-xs text-slate-400 mt-1">Pilih dari daftar yang muncul saat mengetik.</p>
                 </div>
@@ -56,15 +58,6 @@
                                 class="w-full p-3 rounded-lg border bg-transparent focus:ring-2 focus:ring-indigo-500 outline-none"
                                 placeholder="Contoh: PT Maju Jaya / Rombongan Sekolah A">
                         </div>
-
-                        {% if summary.type == 'group' %}
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Jumlah Peserta</label>
-                            <input type="number" id="groupSize" min="1"
-                                class="w-full p-3 rounded-lg border bg-transparent focus:ring-2 focus:ring-indigo-500 outline-none"
-                                placeholder="Total anggota">
-                        </div>
-                        {% endif %}
                     </div>
                 </div>
                 {% endif %}
@@ -529,7 +522,7 @@
             },
             group_details: document.getElementById('groupName') ? {
                 name: document.getElementById('groupName').value,
-                count: document.getElementById('groupSize') ? (parseInt(document.getElementById('groupSize').value) || 0) : 0
+                count: null
             } : null,
             payment_method: document.querySelector('input[name="paymentMethod"]:checked').value,
             promo_code: appliedPromoCode,

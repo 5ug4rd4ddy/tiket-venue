@@ -104,7 +104,7 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm">
                             {% if item.display_type == 'tiket' %}
-                            <a href="{{ url_for('main.payment_page', uuid=item.uuid) }}"
+                            <a href="{{ url_for('main.reseller_order_detail', uuid=item.uuid) }}"
                                 class="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium flex items-center gap-1">
                                 Detail
                             </a>
